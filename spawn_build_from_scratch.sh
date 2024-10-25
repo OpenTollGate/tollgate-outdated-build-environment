@@ -142,7 +142,7 @@ while true; do
         echo "Starting full build in container: $FULL_BUILD_CONTAINER"
         sudo docker run -d --name "$FULL_BUILD_CONTAINER" \
             -v "$(pwd)/binaries:/home/builduser/TollGateNostrToolKit/binaries" \
-    -        e BUILD _TYPE="full" \
+            -e BUILD_TYPE="full" \
             -e GUI_COMMIT="$GUI_COMMIT" \
             -e TOOLKIT_COMMIT="$TOOLKIT_COMMIT" \
             -e FEED_COMMIT="$FEED_COMMIT" openwrt-builder
