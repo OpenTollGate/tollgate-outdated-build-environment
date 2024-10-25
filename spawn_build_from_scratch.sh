@@ -206,3 +206,5 @@ done
 
 # docker stop $(docker ps -q --filter "name=openwrt-builder")
 # docker container prune
+# docker rmi openwrt-builder
+# docker build -t openwrt-builder .
