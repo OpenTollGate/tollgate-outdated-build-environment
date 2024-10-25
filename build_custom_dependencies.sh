@@ -7,6 +7,12 @@ SCRIPT_DIR="$HOME/TollGateNostrToolKit"
 OPENWRT_DIR="$HOME/openwrt"
 ROUTERS_DIR="$SCRIPT_DIR/routers"
 
+# Get commit hashes for all repos
+GUI_COMMIT=$(git -C "$HOME/TollGateGui" rev-parse -- short HEAD)
+TOOLKIT_COMMIT=$(git -C "$HOME/TollGateNostrToolKit" rev-parse --short HEAD)
+FEED_COMMIT=$(git -C "$HOME/TollGateFeed" rev-parse --short HEAD)
+
+
 # Define a function to map router types to target and subtarget
 get_target_subtarget() {
     local router_type=$1
@@ -276,11 +282,20 @@ if [ -z "$SYSUPGRADE_FILE" ]; then
     exit 1
 fi
 
-# Extract the base filename without extension
-BASE_FILENAME=$(basename "$SYSUPGRADE_FILE" .bin)
+# Determine build type based on REBUILD_NEEDED
+BUILD_TYPE="quick"
+if [ "$REBUILD_NEEDED" = true ]; then
+    BUILD_TYPE="full"
+fi
 
-# Create the new filename with commit hash
-NEW_FILENAME="${BASE_FILENAME}_${SCRIPT_COMMIT}.bin"
+# Generate new filename using the shared script
+BASE_FILENAME=$(basename "$SYSUPGRADE_FILE")
+NEW_FILENAME=$("$SCRIPT_DIR/generate_firmware_name.sh" \
+    "$BASE_FILENAME" \
+    "$BUILD_TYPE" \
+    "$GUI_COMMIT"  \
+    "$TOOLKIT_COMMIT" \
+    "$FEED_COMMIT")
 
 # Copy the file to the destination directory with the new filename
 cp "$SYSUPGRADE_FILE" "$HOME/TollGateNostrToolKit/binaries/$NEW_FILENAME"

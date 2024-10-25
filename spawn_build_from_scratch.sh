@@ -122,6 +122,11 @@ while true; do
         REPO_NAME=$(basename "$REPO_PATH")
         CONTAINER_SUFFIX="${CONTAINER_SUFFIX}-${REPO_NAME}-${COMMIT_HASH}"
     done
+
+    # Get commit hashes for all repos
+    GUI_COMMIT=$(get_commit_hash "$HOME/TollGateGui" "${REPOS["$HOME/TollGateGui"]}")
+    TOOLKIT_COMMIT=$(get_commit_hash "$HOME/TollGateNostrToolKit" "${REPOS["$HOME/TollGateNostrToolKit"]}")
+    FEED_COMMIT=$(get_commit_hash "$HOME/TollGateFeed" "${REPOS["$HOME/TollGateFeed"]}")
     
     if [ "$CHANGES_DETECTED" = true ]; then
         echo "Changes detected. Rebuilding Docker container..."
@@ -135,22 +140,29 @@ while true; do
         
         # 1. Start full build from scratch
         echo "Starting full build in container: $FULL_BUILD_CONTAINER"
-        sudo docker build -t openwrt-builder .
-         sudo docker run -d --name "$FULL_BUILD_CONTAINER" \
-            -v "$(pwd)/binaries:/home/builduser/TollGateNostrToolKit/binaries" openwrt-builder
-            
+        sudo docker run -d --name "$FULL_BUILD_CONTAINER" \
+            -v "$(pwd)/binaries:/home/builduser/TollGateNostrToolKit/binaries" \
+    -        e BUILD _TYPE="full" \
+            -e GUI_COMMIT="$GUI_COMMIT" \
+            -e TOOLKIT_COMMIT="$TOOLKIT_COMMIT" \
+            -e FEED_COMMIT="$FEED_COMMIT" openwrt-builder
+
         # 2. Try to start quick build using existing successful container
         RECENT_CONTAINER=$(find_successful_container)
         
         if [ -n "$RECENT_CONTAINER" ]; then
             echo "Found existing successful container: $RECENT_CONTAINER"
-            
+
             # Create new container using existing container's image
             EXISTING_IMAGE=$(docker inspect --format='{{.Config.Image}}' "$RECENT_CONTAINER")
-            
+    
             echo "Starting quick build in container: $QUICK_BUILD_CONTAINER"
             sudo docker run -d --name "$QUICK_BUILD_CONTAINER" \
                 -v "$(pwd)/binaries:/home/builduser/TollGateNostrToolKit/binaries" \
+                -e BUILD_TYPE="quick" \
+                -e GUI_COMMIT="$GUI_COMMIT" \
+                -e TOOLKIT_COMMIT="$TOOLKIT_COMMIT" \
+                -e FEED_COMMIT="$FEED_COMMIT" \
                 "$EXISTING_IMAGE" \
                 /bin/bash -c "cd /home/builduser/TollGateNostrToolKit && \
                             git pull && \
