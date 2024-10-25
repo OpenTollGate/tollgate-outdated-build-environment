@@ -70,6 +70,8 @@ gh --version
 echo "Emacs version:"
 emacs --version
 
+./docker_permission_fix.sh
+
 print_status "Installation complete!"
 echo "Please log out and log back in for group changes to take effect."
 echo "You can test Docker by running: docker run hello-world"
