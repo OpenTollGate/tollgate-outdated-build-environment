@@ -35,14 +35,24 @@ RUN useradd -m builduser && echo "builduser:builduser" | chpasswd && adduser bui
 # Let the user switch to root temporarily if needed
 RUN echo "builduser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/builduser
 
-# Copy the current directory contents into the container at the expected location
+# Create required directories
+RUN mkdir -p $SCRIPT_DIR && \
+    mkdir -p /home/builduser/TollGateGui && \
+    mkdir -p /home/builduser/TollGateFeed
+
+# Copy the current directory contents into the container
 COPY . $SCRIPT_DIR
 
-# Ensure all scripts are executable
-RUN chmod +x $SCRIPT_DIR/*.sh $SCRIPT_DIR/spawn_build_in_container.sh
+# Clone TollGateGui and TollGateFeed repositories
+RUN cd /home/builduser && \
+    git clone https://github.com/OpenTollGate/TollGateGui.git && \
+    git clone https://github.com/OpenTollGate/TollGateFeed.git
 
-# Set the owner of the directory to builduser, including binaries directory
-RUN chown -R builduser:builduser $SCRIPT_DIR /home/builduser/TollGateNostrToolKit/binaries
+# Ensure all scripts are executable
+RUN chmod +x $SCRIPT_DIR/*.sh
+
+# Set ownership for all directories
+RUN chown -R builduser:builduser /home/builduser
 
 # Create nsite project directory and set permissions
 RUN mkdir -p /home/builduser/nsite-project && \
