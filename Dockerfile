@@ -60,9 +60,9 @@ USER builduser
 WORKDIR /home/builduser/nsite-project
 
 # Initialize nsite project and install nsite-cli with its dependencies
-RUN npm init -y && \
-    npm install nsite-cli node-fetch@2 @noble/hashes @noble/secp256k1 @scure/base && \
-    npm install
+# RUN npm init -y && \
+#    npm install nsite-cli node-fetch@2 @noble/hashes @noble/secp256k1 @scure/base && \
+#    npm install
 
 # Add nsite-cli to PATH
 ENV PATH="/home/builduser/nsite-project/node_modules/.bin:${PATH}"
