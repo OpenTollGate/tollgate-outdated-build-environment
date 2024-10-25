@@ -19,16 +19,16 @@ get_commit_hash() {
 # Function to check for updates in a repository
 check_repo_updates() {
     local repo_path=$1
-    local branch=$2 
+    local branch=$2    # Removed trailing space
     
     cd "$repo_path"
-    git fetch origin $branch
+    git fetch origin "${branch}"    # Added quotes
     
-    LOCAL=$(git rev-parse $branch)
-    REMOTE=$(git rev-parse origin/$branch)
+    LOCAL=$(git rev-parse "${branch}")    # Added quotes
+    REMOTE=$(git rev-parse "origin/${branch}")    # Added quotes and fixed spacing
     
     if [ "$LOCAL" != "$REMOTE" ]; then
-        git pull origin $branch
+        git pull origin "${branch}"    # Added quotes
         return 0  # Changes detected
     fi
     return 1  # No changes
@@ -48,22 +48,21 @@ while true; do
             cd $(dirname "$REPO_PATH")
             git clone "https://github.com/OpenTollGate/$REPO_NAME.git"
             cd "$REPO_PATH"
-            git checkout $BRANCH
+            git checkout "${BRANCH}"
         fi
         
-        if check_repo_updates "$REPO_PATH" "$ BRANCH"; then
+        if check_repo_updates "$REPO_PATH" "${BRANCH}"; then    # Removed "$ BRANCH" and added quotes
             CHANGES_DETECTED=true
         fi
         
         # Add commit hash to container suffix
-        COMMIT_HASH=$(get_commit_hash "$REPO_PATH" "$BRANCH")
+        COMMIT_HASH=$(get_commit_hash "$REPO_PATH" "${BRANCH}")
         REPO_NAME=$(basename "$REPO_PATH")
         CONTAINER_SUFFIX="${CONTAINER_SUFFIX}-${REPO_NAME}-${COMMIT_HASH}"
     done
     
     if [ "$CHANGES_DETECTED" = true ]; then
         echo "Changes detected. Rebuilding Docker container..."
-        
         # Remove initial dash from container suffix
         CONTAINER_SUFFIX=${CONTAINER_SUFFIX#-}
         CONTAINER_NAME="openwrt-builder-${CONTAINER_SUFFIX}"
