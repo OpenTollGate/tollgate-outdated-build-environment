@@ -71,7 +71,7 @@ WORKDIR $SCRIPT_DIR
 
 # Set the default command to execute the spawn script
 # CMD ["./spawn_build_in_container.sh"]
-# CMD ["./build_coordinator.sh"]
+CMD ["./build_coordinator.sh"]
 
 # Keep container running
-CMD ["tail", "-f", "/dev/null"]
+# CMD ["tail", "-f", "/dev/null"]
