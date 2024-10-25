@@ -88,16 +88,9 @@ cd TollGateNostrToolKit/</pre>
         </div>
 
         <div class="download-section">
-            <h2>Available Release</h2>
-            <ul>
-                <!-- Example entries - update with actual files -->
-                <li>
-                    <a href="openwrt-ath79-nand-glinet_gl-ar300m-nor-squashfs-sysupgrade_b2dd74068d02951c979678444e6a43be011a8ef2.bin">openwrt-ath79-nand-glinet_gl-ar300m-nor-squashfs-sysupgrade_b2dd74068d02951c979678444e6a43be011a8ef2.bin</a>
-                    <br>
-                    <span class="hash">SHA256: c7ba6a56fa5d48d424d784ab9b4ab25a3081b77b4dfde8fe963e043ff66b10e2</span>
-                    <br>
-                     <span class="hash">Size: 14615374 bytes</span>
-                </li>
+            <h2>Available Releases</h2>
+            <ul id="releases-list">
+                <!-- Releases will be dynamically inserted here by JavaScript -->
             </ul>
         </div>
 
@@ -110,7 +103,7 @@ cd TollGateNostrToolKit/</pre>
     <script>
         async function loadReleases() {
             try {
-                const response  = await fetch('checksums.json');
+                const response = await fetch('checksums.json');
                 const checksums = await response.json();
                 const releasesList = document.getElementById('releases-list');
                 
@@ -138,7 +131,7 @@ cd TollGateNostrToolKit/</pre>
             } catch (error) {
                 console.error('Error loading releases:', error);
                 const releasesList = document.getElementById('releases-list');
-                releasesList.innerHTML = '<li>Error loading releases.  Please try again later.</li>';
+                releasesList.innerHTML = '<li>Error loading releases. Please try again later.</li>';
             }
         }
 
