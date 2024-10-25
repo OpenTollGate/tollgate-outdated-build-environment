@@ -1,5 +1,28 @@
 #!/bin/bash
 
+# Function to find a successfully completed container
+find_successful_container() {
+    # List all stopped containers with openwrt-builder prefix, newest first
+    docker ps -a --filter "name=openwrt-builder" --filter "status=exited" --format "{{.Names}}" | while read container; do
+        # Check exit code
+        exit_code=$(docker inspect --format='{{.State.ExitCode}}' "$container")
+        
+        # Check for binary file
+        docker  exec -i "$container" bash -c '[ -f "/home/builduser/TollGateNostrToolKit/binaries/*sysupgrade*.bin" ]' >/dev/null 2>&1
+        has_binary=$?
+        
+        # Check build logs for success message
+        docker logs "$container" | grep -q "OpenWrt build completed successfully!" >/dev/null 2>&1
+        has_success_message=$?
+        
+        if [ "$exit_code" = "0" ] && [ "$has_binary" = "0" ] && [ "$has_success_message" = "0" ]; then
+            echo "$container"
+            return 0
+        fi
+    done
+}
+
+
 # Define repositories and their branches
 declare -A REPOS=(
     ["$HOME/TollGateGui"]="master"
@@ -78,6 +101,7 @@ check_repo_updates() {
     return 1  # No changes
 }
 
+# Main loop
 while true; do
     CHANGES_DETECTED=false
     CONTAINER_SUFFIX=""
@@ -104,26 +128,43 @@ while true; do
         
         # Remove initial dash from container suffix
         CONTAINER_SUFFIX=${CONTAINER_SUFFIX#-}
-        CONTAINER_NAME="openwrt-builder-${CONTAINER_SUFFIX}"
         
-        # Stop and remove existing container if it exists
-        if [ "$(docker ps -aq -f name=$CONTAINER_NAME)" ]; then
-            sudo docker stop $CONTAINER_NAME || true
-            sudo docker rm $CONTAINER_NAME || true
+        # Names for both containers
+        FULL_BUILD_CONTAINER="openwrt-builder-full-${CONTAINER_SUFFIX}"
+        QUICK_BUILD_CONTAINER="openwrt-builder-quick-${CONTAINER_SUFFIX}"
+        
+        # 1. Start full build from scratch
+        echo "Starting full build in container: $FULL_BUILD_CONTAINER"
+        sudo docker build -t openwrt-builder .
+         sudo docker run -d --name "$FULL_BUILD_CONTAINER" \
+            -v "$(pwd)/binaries:/home/builduser/TollGateNostrToolKit/binaries" openwrt-builder
+            
+        # 2. Try to start quick build using existing successful container
+        RECENT_CONTAINER=$(find_successful_container)
+        
+        if [ -n "$RECENT_CONTAINER" ]; then
+            echo "Found existing successful container: $RECENT_CONTAINER"
+            
+            # Create new container using existing container's image
+            EXISTING_IMAGE=$(docker inspect --format='{{.Config.Image}}' "$RECENT_CONTAINER")
+            
+            echo "Starting quick build in container: $QUICK_BUILD_CONTAINER"
+            sudo docker run -d --name "$QUICK_BUILD_CONTAINER" \
+                -v "$(pwd)/binaries:/home/builduser/TollGateNostrToolKit/binaries" \
+                "$EXISTING_IMAGE" \
+                /bin/bash -c "cd /home/builduser/TollGateNostrToolKit && \
+                            git pull && \
+                            ./build_coordinator.sh"
+        else
+            echo "No successful containers found for quick build"
         fi
         
-        # Build and run new container
-        cd "$HOME/TollGateNostrToolKit"
-        sudo docker build -t openwrt-builder .
-        sudo docker run -d --name $CONTAINER_NAME \
-            -v "$(pwd)/binaries:/home/builduser/TollGateNostrToolKit/binaries" openwrt-builder
-        
-        echo "New container started: $CONTAINER_NAME"
+        echo "Build processes initiated"
     else
         echo "No changes detected. Checking again in $WATCH_INTERVAL seconds..."
     fi
     
-    sleep $WATCH_INTERVAL
+    sleep $WATCH_INTERVAL 
 done
 
 # docker stop $(docker ps -q --filter "name=openwrt-builder")
