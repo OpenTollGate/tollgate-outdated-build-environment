@@ -78,8 +78,7 @@ while true; do
         cd "$HOME/TollGateNostrToolKit"
         sudo docker build -t openwrt-builder .
         sudo docker run -d --name $CONTAINER_NAME \
-            -v "$(pwd)/binaries:/home/builduser/TollGateNostrToolKit/binaries" \ 
-            openwrt-builder
+            -v "$(pwd)/binaries:/home/builduser/TollGateNostrToolKit/binaries" openwrt-builder
         
         echo "New container started: $CONTAINER_NAME"
     else
