@@ -124,3 +124,5 @@ while true; do
     
     sleep $WATCH_INTERVAL
 done
+
+# docker stop $(docker ps -q --filter "name=openwrt-builder")
