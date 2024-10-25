@@ -180,3 +180,4 @@ while true; do
 done
 
 # docker stop $(docker ps -q --filter "name=openwrt-builder")
+# docker container prune
