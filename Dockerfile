@@ -51,6 +51,7 @@ RUN mkdir -p /home/builduser/nsite-project && \
 # Create .npm directory and set permissions
 RUN mkdir -p /home/builduser/.npm && \
     chown -R builduser:builduser /home/builduser/.npm
+    chown -R builduser:builduser /home/builduser
 
 # Switch to the non-root user
 USER builduser
