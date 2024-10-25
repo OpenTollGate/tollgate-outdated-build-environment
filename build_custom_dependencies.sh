@@ -34,6 +34,7 @@ if [ "$#" -ne 1 ]; then
     for file in "$ROUTERS_DIR"/*_config; do
         basename "${file}" | sed 's/_config$//'
     done
+    tail -f /dev/null
     exit 1
 fi
 
@@ -146,6 +147,7 @@ if [ ! -f "$CONFIG_FILE" ]; then
     for file in "$ROUTERS_DIR"/*_config; do
         basename "${file}" | sed 's/_config$//'
     done
+    tail -f /dev/null
     exit 1
 fi
 cp $CONFIG_FILE $OPENWRT_DIR/.config
@@ -198,6 +200,7 @@ elif [ "$CONFIG_CHANGED" = true ]; then
 
     if [ "$TARGET" = "unknown" ] || [ "$SUBTARGET" = "unknown" ]; then
         echo "Error: Unknown router type $ROUTER_TYPE"
+	tail -f /dev/null
         exit 1
     fi
 
@@ -257,6 +260,7 @@ done
 # Exit with status 1 if any file wasn't found
 if [ "$all_files_found" = false ]; then
     echo "One or more required IPK files were not found."
+    tail -f /dev/null
     exit 1
 fi
 
@@ -268,6 +272,7 @@ SYSUPGRADE_FILE=$(find "$OPENWRT_DIR/bin" -type f -name "*sysupgrade.bin")
 # Check if file was found
 if [ -z "$SYSUPGRADE_FILE" ]; then
     echo "No sysupgrade.bin file found."
+    tail -f /dev/null
     exit 1
 fi
 
@@ -285,6 +290,7 @@ if [ $? -eq 0 ]; then
     echo "Successfully copied $NEW_FILENAME to ~/TollGateNostrToolKit/binaries/."
 else
     echo "Failed to copy file."
+    tail -f /dev/null
     exit 1
 fi
 
