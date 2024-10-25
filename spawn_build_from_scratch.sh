@@ -16,19 +16,62 @@ get_commit_hash() {
     git rev-parse --short HEAD
 }
 
+# Function to initialize repository
+initialize_repo() {
+    local repo_path=$1
+    local branch=$2
+    local  repo_name=$(basename "$repo_path")
+    
+    echo "Initializing repository: $repo_name"
+    
+    # Create directory if it doesn't exist
+    if [ ! -d "$repo_path" ]; then
+        cd $(dirname "$repo_path")
+        git clone "https://github.com/OpenTollGate/$repo_name.git"
+    fi
+    
+    # Enter repository and set up branch
+    cd "$repo_path"
+    
+    # Fetch all branches
+    git fetch origin
+    
+    # Check if branch exists locally
+    if ! git rev-parse --verify "${branch}" >/dev/null 2>&1; then
+        # Create local branch tracking remote branch
+        git checkout -b "${branch}" "origin/${branch}"
+    else
+        # Switch to existing branch
+        git checkout "${branch}"
+    fi
+}
+
 # Function to check for updates in a repository
 check_repo_updates() {
     local repo_path=$1
-    local branch=$2    # Removed trailing space
+    local branch=$2
     
     cd "$repo_path"
-    git fetch origin "${branch}"    # Added quotes
+    echo "Checking updates for ${repo_path} on branch ${branch}"
     
-    LOCAL=$(git rev-parse "${branch}")    # Added quotes
-    REMOTE=$(git rev-parse "origin/${branch}")    # Added quotes and fixed spacing
+    # Fetch latest changes 
+    git fetch origin "${branch}"
+    
+    # Get the latest commit hashes
+    if ! LOCAL=$(git rev-parse "${branch}" 2>/dev/null); then
+        echo "Local branch not found, creating it..."
+        git checkout -b "${branch}" "origin/${branch}"
+        return 0
+    fi
+    
+    if ! REMOTE=$(git rev-parse "origin/${branch}" 2>/dev/null); then
+        echo "Remote branch not found!"
+        return 1
+    fi
     
     if [ "$LOCAL" != "$REMOTE" ]; then
-        git pull origin "${branch}"    # Added quotes
+        echo "Changes detected, pulling updates..."
+        git pull origin "${branch}"
         return 0  # Changes detected
     fi
     return 1  # No changes
@@ -42,16 +85,10 @@ while true; do
     for REPO_PATH in "${!REPOS[@]}"; do
         BRANCH=${REPOS[$REPO_PATH]}
         
-        # Create directory if it doesn't exist
-        if [ ! -d "$REPO_PATH" ]; then
-            REPO_NAME=$(basename "$REPO_PATH")
-            cd $(dirname "$REPO_PATH")
-            git clone "https://github.com/OpenTollGate/$REPO_NAME.git"
-            cd "$REPO_PATH"
-            git checkout "${BRANCH}"
-        fi
+        # Initialize repository if needed
+        initialize_repo "$REPO_PATH" "${BRANCH}"
         
-        if check_repo_updates "$REPO_PATH" "${BRANCH}"; then    # Removed "$ BRANCH" and added quotes
+        if check_repo_updates "$REPO_PATH" "${BRANCH}"; then
             CHANGES_DETECTED=true
         fi
         
@@ -63,6 +100,7 @@ while true; do
     
     if [ "$CHANGES_DETECTED" = true ]; then
         echo "Changes detected. Rebuilding Docker container..."
+        
         # Remove initial dash from container suffix
         CONTAINER_SUFFIX=${CONTAINER_SUFFIX#-}
         CONTAINER_NAME="openwrt-builder-${CONTAINER_SUFFIX}"
