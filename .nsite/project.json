@@ -9,8 +9,8 @@
       "https://cdn.hzrd149.com"
   ],
   "profile": {
-    "name": "test",
-    "about": "test"
+    "name": "TollGateSorces",
+    "about": "CI/CD Deployment"
   },
   "publishProfile": true,
   "publishServerList": true,
