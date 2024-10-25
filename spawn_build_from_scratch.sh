@@ -2,8 +2,9 @@
 
 # Define repositories and their branches
 declare -A REPOS=(
-    ["$HOME/TollGateGui"]="main"
+    ["$HOME/TollGateGui"]="master"
     ["$HOME/TollGateNostrToolKit"]="dockerize"
+    ["$HOME/TollGateFeed"]="main"
 )
 
 WATCH_INTERVAL=60 # Check every 60 seconds
@@ -20,7 +21,7 @@ get_commit_hash() {
 initialize_repo() {
     local repo_path=$1
     local branch=$2
-    local  repo_name=$(basename "$repo_path")
+    local repo_name=$(basename "$repo_path")
     
     echo "Initializing repository: $repo_name"
     
