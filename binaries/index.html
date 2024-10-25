@@ -106,5 +106,44 @@ cd TollGateNostrToolKit/</pre>
             <p>Verify file integrity by checking against our <a href="checksums.json">checksums file</a></p>
         </footer>
     </div>
+
+    <script>
+        async function loadReleases() {
+            try {
+                const response  = await fetch('checksums.json');
+                const checksums = await response.json();
+                const releasesList = document.getElementById('releases-list');
+                
+                // Filter for binary files
+                const binaries = Object.keys(checksums)
+                    .filter(key => key.endsWith('.bin_checksum'))
+                    .map(key => ({
+                        filename: key.replace('_checksum', ''),
+                        checksum: checksums[key],
+                        size: checksums[key.replace('_checksum', '_size')]
+                    }));
+
+                // Create HTML for each binary
+                binaries.forEach(binary => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <a href="${binary.filename}">${binary.filename}</a>
+                        <br>
+                        <span class="hash">SHA256: ${binary.checksum}</span>
+                        <br>
+                        <span class="hash">Size: ${binary.size} bytes</span>
+                    `;
+                    releasesList.appendChild(li);
+                });
+            } catch (error) {
+                console.error('Error loading releases:', error);
+                const releasesList = document.getElementById('releases-list');
+                releasesList.innerHTML = '<li>Error loading releases.  Please try again later.</li>';
+            }
+        }
+
+        // Load releases when the page loads
+        window.addEventListener('DOMContentLoaded', loadReleases);
+    </script>
 </body>
 </html>
