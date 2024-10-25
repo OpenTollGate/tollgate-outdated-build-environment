@@ -1,5 +1,30 @@
 #!/bin/bash
 
+
+# Function to check if Docker image exists
+check_docker_image() {
+    docker image inspect openwrt-builder >/dev/null 2>&1
+    return $?
+}
+
+# Function to build Docker image
+build_docker_image() {
+    echo "Building Docker image 'openwrt-builder'..."
+    docker build -t openwrt-builder .
+    if [ $? -ne 0 ]; then
+        echo "Failed to build Docker image!"
+        exit 1
+    fi
+    echo "Docker image built successfully"
+}
+
+# Check and build Docker image if needed
+if ! check_docker_image; then
+    echo "Docker image 'openwrt-builder' not found"
+    build_docker_image
+fi
+
+
 # Function to find a successfully completed container
 find_successful_container() {
     # List all stopped containers with openwrt-builder prefix, newest first
