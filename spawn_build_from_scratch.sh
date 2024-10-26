@@ -163,6 +163,11 @@ while true; do
         FULL_BUILD_CONTAINER="openwrt-builder-full-${CONTAINER_SUFFIX}"
         QUICK_BUILD_CONTAINER="openwrt-builder-quick-${CONTAINER_SUFFIX}"
         
+        # Before running Docker containers, add:
+        mkdir -p "$(pwd)/binaries"
+        sudo chown -R 1000:1000 "$(pwd)/binaries"  # 1000 is typically the first user UID
+        sudo chmod 777 "$(pwd)/binaries"
+
         # 1. Start full build from scratch
         echo "Starting full build in container: $FULL_BUILD_CONTAINER"
         sudo docker run -d --name "$FULL_BUILD_CONTAINER" \
@@ -170,7 +175,9 @@ while true; do
             -e BUILD_TYPE="full" \
             -e GUI_COMMIT="$GUI_COMMIT" \
             -e TOOLKIT_COMMIT="$TOOLKIT_COMMIT" \
-            -e FEED_COMMIT="$FEED_COMMIT" openwrt-builder
+            -e FEED_COMMIT="$FEED_COMMIT" \
+            --user $(id -u):$(id -g) \
+            openwrt-builder
 
         # 2. Try to start quick build using existing successful container
         RECENT_CONTAINER=$(find_successful_container)
@@ -188,6 +195,7 @@ while true; do
                 -e GUI_COMMIT="$GUI_COMMIT" \
                 -e TOOLKIT_COMMIT="$TOOLKIT_COMMIT" \
                 -e FEED_COMMIT="$FEED_COMMIT" \
+                --user $(id -u):$(id -g) \
                 "$EXISTING_IMAGE" \
                 /bin/bash -c "cd /home/builduser/TollGateNostrToolKit && \
                             git pull && \
