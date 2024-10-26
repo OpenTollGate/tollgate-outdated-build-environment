@@ -7,6 +7,12 @@ SCRIPT_DIR="$HOME/TollGateNostrToolKit"
 OPENWRT_DIR="$HOME/openwrt"
 ROUTERS_DIR="$SCRIPT_DIR/routers"
 
+# Get commit hashes for all repos
+GUI_COMMIT=$(git -C "$HOME/TollGateGui" rev-parse -- short HEAD)
+TOOLKIT_COMMIT=$(git -C "$HOME/TollGateNostrToolKit" rev-parse --short HEAD)
+FEED_COMMIT=$(git -C "$HOME/TollGateFeed" rev-parse --short HEAD)
+
+
 # Define a function to map router types to target and subtarget
 get_target_subtarget() {
     local router_type=$1
@@ -34,6 +40,7 @@ if [ "$#" -ne 1 ]; then
     for file in "$ROUTERS_DIR"/*_config; do
         basename "${file}" | sed 's/_config$//'
     done
+    tail -f /dev/null
     exit 1
 fi
 
@@ -146,6 +153,7 @@ if [ ! -f "$CONFIG_FILE" ]; then
     for file in "$ROUTERS_DIR"/*_config; do
         basename "${file}" | sed 's/_config$//'
     done
+    tail -f /dev/null
     exit 1
 fi
 cp $CONFIG_FILE $OPENWRT_DIR/.config
@@ -198,6 +206,7 @@ elif [ "$CONFIG_CHANGED" = true ]; then
 
     if [ "$TARGET" = "unknown" ] || [ "$SUBTARGET" = "unknown" ]; then
         echo "Error: Unknown router type $ROUTER_TYPE"
+	tail -f /dev/null
         exit 1
     fi
 
@@ -257,6 +266,7 @@ done
 # Exit with status 1 if any file wasn't found
 if [ "$all_files_found" = false ]; then
     echo "One or more required IPK files were not found."
+    tail -f /dev/null
     exit 1
 fi
 
@@ -268,14 +278,24 @@ SYSUPGRADE_FILE=$(find "$OPENWRT_DIR/bin" -type f -name "*sysupgrade.bin")
 # Check if file was found
 if [ -z "$SYSUPGRADE_FILE" ]; then
     echo "No sysupgrade.bin file found."
+    tail -f /dev/null
     exit 1
 fi
 
-# Extract the base filename without extension
-BASE_FILENAME=$(basename "$SYSUPGRADE_FILE" .bin)
+# Determine build type based on REBUILD_NEEDED
+BUILD_TYPE="quick"
+if [ "$REBUILD_NEEDED" = true ]; then
+    BUILD_TYPE="full"
+fi
 
-# Create the new filename with commit hash
-NEW_FILENAME="${BASE_FILENAME}_${SCRIPT_COMMIT}.bin"
+# Generate new filename using the shared script
+BASE_FILENAME=$(basename "$SYSUPGRADE_FILE")
+NEW_FILENAME=$("$SCRIPT_DIR/generate_firmware_name.sh" \
+    "$BASE_FILENAME" \
+    "$BUILD_TYPE" \
+    "$GUI_COMMIT"  \
+    "$TOOLKIT_COMMIT" \
+    "$FEED_COMMIT")
 
 # Copy the file to the destination directory with the new filename
 cp "$SYSUPGRADE_FILE" "$HOME/TollGateNostrToolKit/binaries/$NEW_FILENAME"
@@ -285,6 +305,7 @@ if [ $? -eq 0 ]; then
     echo "Successfully copied $NEW_FILENAME to ~/TollGateNostrToolKit/binaries/."
 else
     echo "Failed to copy file."
+    tail -f /dev/null
     exit 1
 fi
 

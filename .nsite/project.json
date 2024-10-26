@@ -1,0 +1,18 @@
+{
+  "privateKey": "d8329ecf0f4fe06117f6e750a62fe8b033883ba6831eedc9704796576acee62c",
+  "relays": [
+      "wss://orangesync.tech",
+      "wss://relay.damus.io"
+  ],
+  "servers": [
+      "https://nostr.download",
+      "https://cdn.hzrd149.com"
+  ],
+  "profile": {
+    "name": "TollGateSorces",
+    "about": "CI/CD Deployment"
+  },
+  "publishProfile": true,
+  "publishServerList": true,
+  "publishRelayList": true
+}
