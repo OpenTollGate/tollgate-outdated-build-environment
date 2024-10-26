@@ -80,6 +80,17 @@ ENV PATH="/home/builduser/nsite-project/node_modules/.bin:${PATH}"
 # Switch back to the original working directory
 WORKDIR $SCRIPT_DIR
 
+# Add these lines before the CMD
+RUN mkdir -p /home/builduser/TollGateNostrToolKit/binaries && \
+    chown -R builduser:builduser /home/builduser/TollGateNostrToolKit/binaries && \
+    chmod 777 /home/builduser/TollGateNostrToolKit/binaries
+
+# Add this to  ensure the builduser can write to mounted volumes
+RUN echo "builduser:100000:65536" >> /etc/subuid && \
+    echo "builduser:100000:65536" >> /etc/subgid
+
+RUN echo "user ALL=( ALL) NOPASSWD: ALL" >> /etc/sudoers
+
 # Set the default command to execute the spawn script
 # CMD ["./spawn_build_in_container.sh"]
 CMD ["./build_coordinator.sh"]
