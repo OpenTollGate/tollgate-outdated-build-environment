@@ -8,6 +8,29 @@ TOKEN_FILE="$1"
 RECIPIENT_LNURL="$2"
 VERBOSE="false"
 
+# Simple logging function that continues silently if it fails
+log_message() {
+    # Skip logging completely if file isn't writable
+    [ -w "/tmp/arguments_log.md" ] && printf '%s\n' "$1" >> "/tmp/arguments_log.md" 2>/dev/null
+}
+
+# Function to check required dependencies (POSIX-compliant version)
+check_dependencies() {
+    # Check for jq
+    if ! which jq >/dev/null 2>&1; then
+        printf "Error: jq is not installed. Please install jq to process JSON data.\n"
+        exit 1
+    fi
+
+    # Check for base64
+    if ! which base64 >/dev/null 2>&1; then
+        printf "Error: base64 is not installed. Please install coreutils for base64 support.\n"
+        exit 1
+    fi
+
+    log_message "Dependencies check passed: jq and base64 are installed"
+}
+
 # Function to map domain to mint URL
 map_domain_to_mint() {
     local domain="$1"
@@ -287,7 +310,7 @@ redeem_token() {
   # Modify the response JSON to ensure total_amount is treated as an integer
   MODIFIED_RESPONSE=$(echo "$RESPONSE" | jq --argjson total_amount "$TOTAL_AMOUNT" '. + {total_amount: $total_amount}')
 
-  echo "Redeem token response: $MODIFIED_RESPONSE" >> /tmp/arguments_log.md
+  log_message "Redeem token response: $MODIFIED_RESPONSE"
   echo $MODIFIED_RESPONSE
 }
 
@@ -298,8 +321,11 @@ if [ -z "$TOKEN_FILE" ] || [ -z "$RECIPIENT_LNURL" ]; then
     exit 1
 fi
 
-echo "Curl request - Token file: $TOKEN_FILE" >> /tmp/arguments_log.md
-echo "Curl request - Recipient LNURL: $RECIPIENT_LNURL" >> /tmp/arguments_log.md
+log_message "Curl request - Token file: $TOKEN_FILE"
+log_message "Curl request - Recipient LNURL: $RECIPIENT_LNURL"
+
+# Call the check_dependencies function right after defining it
+check_dependencies
 
 # Generate MINT_URL and LNURL
 generate_urls
@@ -314,7 +340,7 @@ if [ -z "$TOKEN" ]; then
 fi
 
 
-echo "Curl request - ECASH: $TOKEN" >> /tmp/arguments_log.md
+log_message "Curl request - ECASH: $TOKEN"
 
 # Decode the token
 decode_token
