@@ -241,92 +241,81 @@ function login_page() {
     $me = $_SERVER['SCRIPT_NAME'];
     $fas = isset($_GET["fas"]) ? $_GET["fas"] : '';
     $client_zone = isset($GLOBALS["client_zone"]) ? $GLOBALS["client_zone"] : 'LocalZone';
-    $host = 'https://mainnet.demo.btcpayserver.org';
-    $apiKey = 'e7081c8468fc3f305d78e1051e38dca8a6646644';
-    $storeId = 'EnLY7ZrBvSmLzTDWyMx9sjyJFfBjt5fGwBAnZXkCTbQf';
 
-    if (!isset($_POST['amount'])) {
-         echo "
+    if (!isset($_POST['ecash'])) {
+        echo "
             <big-red>Welcome!</big-red><br>
             <med-blue>You are connected to $client_zone</med-blue><br>
-            <b>Please enter payment amount to continue</b>
+            <b>Please enter your e-cash token to continue</b>
         ";
 
         if (!isset($_GET['fas'])) {
             echo "<br><b style=\"color:red;\">ERROR! Incomplete data passed from NDS</b>\n";
         } else {
-            // Display the Bitcoin payment form
+            // Display the e-cash input form
             echo "
-                <form method=\"POST\" class=\"amount-form\">
+                <form method=\"POST\" class=\"ecash-form\">
                     <input type=\"hidden\" name=\"fas\" value=\"$fas\">
-                    <label for=\"amount\">Amount in SAT (minimum 10000 sats recommended): </label>
-                    <input type=\"number\" 
-                           name=\"amount\"
-                           id=\"amount\" 
-                           step=\"1\" 
-                           min=\"10000\" 
+                    <label for=\"ecash\">E-cash Token: </label>
+                    <input type=\"text\" 
+                           name=\"ecash\"
+                           id=\"ecash\" 
                            required 
-                           class=\"amount-input\" 
-                           placeholder=\"Enter amount in SATs\">
-                    <button type=\"submit\" class=\"submit-button\">Create Bitcoin Invoice</button>
+                           class=\"ecash-input\" 
+                           placeholder=\"Enter your e-cash token\">
+                    <button type=\"submit\" class=\"submit-button\">Redeem E-cash</button>
                 </form>
             ";
         }
     } else {
         try {
-            $amount = intval($_POST['amount']);
+            $ecash = trim($_POST['ecash']); 
             
-            if ($amount < 10000) {
-                throw new Exception("Amount must be at least 10,000 sats for on-chain transactions");
+            // Validate input
+            if (empty($ecash)) {
+                throw new Exception("E-cash token is required");
             }
 
-            $client = new \BTCPayServer\Client\Store($host, $apiKey);
+            // Generate checksum of e-cash string
+            $checksum = hash('sha256', $ecash);
             
-            // Try to get store info to verify API key works
-            $store = $client->getStore($storeId);
+            // Create file path
+            $filepath = "/tmp/ecash_" . $checksum . ".md";
             
-            // Convert satoshis to BTC
-            $btcAmount = $amount / 100000000;
+            // Save e-cash token to file
+            if (!file_put_contents($filepath, $ecash)) {
+                throw new Exception("Failed to save e-cash token");
+            }
             
-            // Create the invoice with on-chain Bitcoin specified
-            $invoiceClient = new \BTCPayServer\Client\Invoice($host, $apiKey);
-            $invoice = $invoiceClient->createInvoice(
-                $storeId,
-                'SATS',
-                \BTCPayServer\Util\PreciseNumber::parseString($amount),
-                'TEST-' . time(),
-                null,
-                [
-                    'paymentMethods' => ['BTC'],
-                    'defaultPaymentMethod' => 'BTC'
-                ]
-            );
+            // Make file readable
+            chmod($filepath, 0644);
             
-            // Get the checkout URL
-            $checkoutUrl = $invoice->getData()['checkoutLink'];
+            // Execute curl_request.sh script
+            $command = escapeshellcmd('./curl_request.sh ' . escapeshellarg($filepath) . 'chandran@minibits.cash');
+            $output = [];
+            $return_var = 0;
+            exec($command, $output, $return_var);
             
-            // Display success messages
-            echo '<div class="status-message">';
-            echo '<p>✓ API Connection successful</p>';
-            echo '<p>✓ Bitcoin On-chain Invoice created successfully for ' . number_format($amount) . ' sats';
-            echo ' (' . number_format($btcAmount, 8) . ' BTC)</p>';
+            if ($return_var !== 0) {
+                throw new Exception("Failed to process e-cash token. Error code: " . $return_var);
+            }
+            
+            // Display success message
+            echo '<div class="status-message" style="background: #e8f5e9; color: #2e7d32; padding: 15px; margin: 10px 0; border-radius: 5px;">';
+            echo '<p>✓ E-cash token processed successfully</p>';
+            echo '<p>✓ Token saved and redeemed</p>';
+            foreach ($output as $line) {
+                echo '<p>' . htmlspecialchars($line) . '</p>';
+            }
             echo '</div>';
             
-            // Display the invoice iframe
-            echo '<h2>Pay  Invoice (Bitcoin On-chain)</h2>';
-            echo '<iframe src="' . $checkoutUrl . '" class="invoice-frame"></iframe>';
-            
-            // Display the direct checkout link
-            echo '<p><a href="' . $checkoutUrl . '" target="_blank" class="checkout-link">';
-            echo 'Open in New Window</a></p>';
-            
-            // Add a button to create new invoice
+            // Add a button to submit new e-cash token
             echo '<p><a href="' . $me . '?fas=' . $fas . '" class="checkout-link" style="background: #4caf50;">';
-            echo 'Create New Invoice</a></p>';
+            echo 'Submit Another Token</a></p>';
             
         } catch (\Throwable $e) {
-            echo '<div class="status-message" style="background: #ffebee; color: #c62828;">';
-            echo "Error: " . $e->getMessage() . "\n";
+            echo '<div class="status-message" style="background: #ffebee; color: #c62828; padding: 15px; margin: 10px 0; border-radius: 5px;">';
+            echo "Error: " . htmlspecialchars($e->getMessage()) . "\n";
             echo '</div>';
             echo "<p><a href=\"$me?fas=$fas\" class=\"submit-button\">Try Again</a></p>";
         }
