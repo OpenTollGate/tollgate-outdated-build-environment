@@ -14,7 +14,7 @@ $BTCPAY_URL = "https://mainnet.demo.btcpayserver.org";
 $BTCPAY_AUTH = "9d2470e1239d3287cd237a42b7b1a8c7fbbc1830";
 
 // The pre-shared key "faskey" (this must be the same as in the openNDS config):
-$key="c775e7b757ede630cd0aa1113bd102661ab38829ca52a6422ab782862f268646";
+$key="55a63ea290a811d9041e15bde2bf80b356f3fb0e449fbf61f5206339";
 
 // Setup some basics:
 date_default_timezone_set("UTC");
