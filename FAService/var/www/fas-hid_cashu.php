@@ -346,10 +346,36 @@ function login_page() {
                 echo "Combined: " . htmlspecialchars($hid.$key) . "<br>";
                 echo "Token: " . htmlspecialchars($tok) . "<br>";
                 echo "</div>";
+
+                // Convert amount to minutes (1 sat = 1 minute)
+                $minutes = $response['total_amount'];
     
-                // Set custom data
-                $custom = base64_encode("amount=" . $response['total_amount']);
-    
+                // Convert minutes to seconds for OpenNDS
+                $session_timeout = $minutes * 60;
+
+                // Include both amount and timeout in custom data
+                $custom = base64_encode("amount=" . $response['total_amount'] . "&session_timeout=" . $session_timeout);
+
+                $encoded = base64_encode($custom);
+                $decoded = base64_decode($encoded);
+
+                // Add debug output
+                echo '<div class="debug-message" style="background: #f0f0f0; color: #333; padding: 15px; margin: 10px 0; border-radius: 5px; font-family: monospace;">';
+                echo "<strong>Custom Data Debug:</strong><br>";
+                echo "Original: " . htmlspecialchars($custom) . "<br>";
+                echo "Encoded: " . htmlspecialchars($encoded) . "<br>";
+                echo "Decoded: " . htmlspecialchars($decoded) . "<br>";
+                echo "</div>";
+
+                // Debug custom data
+                echo '<div class="debug-message" style="background: #f0f0f0; color: #333; padding: 15px; margin: 10px 0; border-radius: 5px; font-family: monospace;">';
+                echo "<strong>Session Debug:</strong><br>";
+                echo "Amount paid: " . $response['total_amount'] . " sats<br>";
+                echo "Session timeout: " . $session_timeout . " seconds (" . $minutes . " minutes)<br>";
+                echo "Custom data: " . base64_decode($custom) . "<br>";
+                echo  "</div>";
+ 
+
                 // Construct redirect URL
                 $redir = "http://" . $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_NAME'] . "?fas=" . $GLOBALS["fas"] . "&landing=1";
     
