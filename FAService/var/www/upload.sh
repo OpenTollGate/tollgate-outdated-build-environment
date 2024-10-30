@@ -23,5 +23,5 @@ scp ../../../files/usr/lib/opennds/binauth_log.sh root@${ROUTER_IP}:/usr/lib/ope
 ssh root@${ROUTER_IP} "
 chmod +x /usr/lib/opennds/custombinauth.sh
 chmod +x /usr/lib/opennds/binauth_log.sh
-/etc/init.d/opennds restart
+reboot
 "
