@@ -335,6 +335,9 @@ function login_page() {
                 $hid = $GLOBALS["hid"];
                 $key = $GLOBALS["key"];
     
+                // Generate token
+                $tok = hash('sha256', $hid.$key);
+
                 // Debug token generation
                 echo "<!-- Debug Info:
                 HID: $hid
@@ -343,21 +346,28 @@ function login_page() {
                 Token: " . hash('sha256', $hid.$key) . "
                 -->";
     
-                // Generate authentication token
-                $tok = hash('sha256', $hid.$key);
-    
                 // Set custom data
                 $custom = base64_encode("amount=" . $response['total_amount']);
     
-                // Construct authentication URL with debug query parameter
+                // Construct redirect URL
+                $redir = "http://" . $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_NAME'] . "?fas=" . $GLOBALS["fas"] . "&landing=1";
+    
+                // Construct auth URL
                 $authaction = "http://$gatewayaddress/opennds_auth/";
     
-                // Construct the authentication form and submit it automatically
+                // Debug information
+                echo "<!-- Debug Info:
+                HID: $hid
+                Key: $key
+                Token: $tok
+                Redir: $redir
+                -->";
+    
                 echo "
                     <form id='auth_form' action='$authaction' method='get'>
                         <input type='hidden' name='tok' value='$tok'>
                         <input type='hidden' name='custom' value='$custom'>
-                        <input type='hidden' name='redir' value='http://$gatewayaddress/success.html'>
+                        <input type='hidden' name='redir' value='$redir'>
                     </form>
                     <script>
                         console.log('Submitting auth form with token: $tok');
