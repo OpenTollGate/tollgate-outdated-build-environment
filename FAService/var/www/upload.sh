@@ -14,9 +14,12 @@ chown www-data:www-data /tmp/arguments_log.md
 chmod 777 /tmp/arguments_log.md
 "
 
-# Upload files to OpenWRT router
+# Upload config files to OpenWRT router
 scp ../../../files/etc/config/opennds root@${ROUTER_IP}:/etc/config/opennds
 scp ../../../files/etc/config/firewall root@${ROUTER_IP}:/etc/config/firewall
+scp ../../../files/etc/hosts root@${ROUTER_IP}:/etc/hosts
+
+# Upload OpenNDS scripts to OpenWRT router
 scp ../../../files/usr/lib/opennds/custombinauth.sh root@${ROUTER_IP}:/usr/lib/opennds/custombinauth.sh
 scp ../../../files/usr/lib/opennds/binauth_log.sh root@${ROUTER_IP}:/usr/lib/opennds/binauth_log.sh
 scp ../../../files/usr/lib/opennds/client_params.sh root@${ROUTER_IP}:/usr/lib/opennds/client_params.sh

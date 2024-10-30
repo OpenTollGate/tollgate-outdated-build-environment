@@ -13,10 +13,6 @@ config opennds
     list walledgarden '78.47.249.97'
     list walledgarden '78.47.249.97:80'
     list walledgarden '78.47.249.97:443'
-    list walledgarden 'min.minibits.cash'
-    list walledgarden 'min.minibits.cash:443'
-    list walledgarden 'mint.minibits.cash'
-    list walledgarden 'mint.minibits.cash:443'
 
     # Remove or comment out these as we're using remote FAS
     # option login_option_enabled '3'
