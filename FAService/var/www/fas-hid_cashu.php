@@ -290,18 +290,43 @@ function login_page() {
             // Make file readable
             chmod($filepath, 0644);
             
-            // Execute curl_request.sh script
-            $command = escapeshellcmd('./curl_request.sh ' . escapeshellarg($filepath) . 'chandran@minibits.cash');
+            // Execute curl_request.sh script with proper spacing
+            $command = escapeshellcmd('./curl_request.sh ' . escapeshellarg($filepath) . ' chandran@minibits.cash');
+            
+            // Debug: Show the command being executed
+            echo '<div class="debug-message" style="background: #f0f0f0; color: #333; padding: 15px; margin: 10px 0; border-radius: 5px; font-family: monospace;">';
+            echo "<strong>Executing Command:</strong><br>";
+            echo htmlspecialchars($command);
+            echo "</div>";
+
             $output = [];
             $return_var = 0;
             exec($command, $output, $return_var);
+
+            // Debug: Print raw output
+            echo '<div class="debug-message" style="background: #f0f0f0; color: #333; padding: 15px; margin: 10px 0; border-radius: 5px; font-family: monospace;">';
+            echo "<strong>Raw Response:</strong><br>";
+            echo "Return Value: " . htmlspecialchars($return_var) . "<br>";
+            echo "Output Array: <pre>" . htmlspecialchars(print_r($output, true)) . "</pre>";
+            echo "</div>";
 
             // Parse the JSON response
             $response = json_decode($output[0], true);
             
             if ($response === null) {
+                echo '<div class="debug-message" style="background: #f0f0f0; color: #333; padding: 15px; margin: 10px 0; border-radius: 5px; font-family: monospace;">';
+                echo "<strong>JSON Decode Error:</strong><br>";
+                echo "Error: " . json_last_error_msg() . "<br>";
+                echo "Attempted to parse: " . htmlspecialchars($output[0]);
+                echo "</div>";
                 throw new Exception("Invalid response from payment processor");
             }
+
+            // Debug: Show parsed JSON
+            echo '<div class="debug-message" style="background: #f0f0f0; color: #333; padding: 15px; margin: 10px 0; border-radius: 5px; font-family: monospace;">';
+            echo "<strong>Parsed JSON Response:</strong><br>";
+            echo "<pre>" . htmlspecialchars(print_r($response, true)) . "</pre>";
+            echo "</div>";
 
             // Check if payment was successful
             if (isset($response['paid']) && $response['paid'] === true) {
