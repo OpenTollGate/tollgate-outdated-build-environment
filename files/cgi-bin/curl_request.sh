@@ -8,10 +8,10 @@ TOKEN_FILE="$1"
 RECIPIENT_LNURL="$2"
 VERBOSE="false"
 
-# Simple logging function that continues silently if it fails
+# Silent logging function that suppresses all errors
 log_message() {
-    # Skip logging completely if file isn't writable
-    [ -w "/tmp/arguments_log.md" ] && printf '%s\n' "$1" >> "/tmp/arguments_log.md" 2>/dev/null
+    # Try to write to log file, suppress all output and errors
+    { [ -w "/tmp/arguments_log.md" ] && printf '%s\n' "$1" >> "/tmp/arguments_log.md"; } >/dev/null 2>&1
 }
 
 # Function to check required dependencies (POSIX-compliant version)

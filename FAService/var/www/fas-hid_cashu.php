@@ -295,23 +295,30 @@ function login_page() {
             $output = [];
             $return_var = 0;
             exec($command, $output, $return_var);
+
+            // Parse the JSON response
+            $response = json_decode($output[0], true);
             
-            if ($return_var !== 0) {
-                throw new Exception("Failed to process e-cash token. Error code: " . $return_var);
+            if ($response === null) {
+                throw new Exception("Invalid response from payment processor");
+            }
+
+            // Check if payment was successful
+            if (isset($response['paid']) && $response['paid'] === true) {
+                // Payment successful - redirect to thank you page
+                $_GET['fullname'] = 'E-cash User'; // Set a default name
+                $_GET['email'] = 'ecash@user.com'; // Set a default email
+                thankyou_page(); // This will handle the authentication
+                return;
+            } 
+            
+            // Handle specific error cases
+            if (isset($response['detail'])) {
+                throw new Exception($response['detail']);
             }
             
-            // Display success message
-            echo '<div class="status-message" style="background: #e8f5e9; color: #2e7d32; padding: 15px; margin: 10px 0; border-radius: 5px;">';
-            echo '<p>✓ E-cash token processed successfully</p>';
-            echo '<p>✓ Token saved and redeemed</p>';
-            foreach ($output as $line) {
-                echo '<p>' . htmlspecialchars($line) . '</p>';
-            }
-            echo '</div>';
-            
-            // Add a button to submit new e-cash token
-            echo '<p><a href="' . $me . '?fas=' . $fas . '" class="checkout-link" style="background: #4caf50;">';
-            echo 'Submit Another Token</a></p>';
+            // Generic error if we don't recognize the response format
+            throw new Exception("Payment verification failed");
             
         } catch (\Throwable $e) {
             echo '<div class="status-message" style="background: #ffebee; color: #c62828; padding: 15px; margin: 10px 0; border-radius: 5px;">';
