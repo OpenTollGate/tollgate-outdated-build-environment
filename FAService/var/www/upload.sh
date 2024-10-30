@@ -18,10 +18,12 @@ chmod 777 /tmp/arguments_log.md
 scp ../../../files/etc/config/opennds root@${ROUTER_IP}:/etc/config/opennds
 scp ../../../files/usr/lib/opennds/custombinauth.sh root@${ROUTER_IP}:/usr/lib/opennds/custombinauth.sh
 scp ../../../files/usr/lib/opennds/binauth_log.sh root@${ROUTER_IP}:/usr/lib/opennds/binauth_log.sh
+scp ../../../files/usr/lib/opennds/client_params.sh root@${ROUTER_IP}:/usr/lib/opennds/client_params.sh
 
 # Set permissions on router
 ssh root@${ROUTER_IP} "
 chmod +x /usr/lib/opennds/custombinauth.sh
 chmod +x /usr/lib/opennds/binauth_log.sh
+chmod +x /usr/lib/opennds/client_params.sh
 reboot
 "

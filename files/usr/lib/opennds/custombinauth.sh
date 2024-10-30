@@ -19,6 +19,8 @@ log_message() {
 log_message "=== New Authentication Request ==="
 log_message "Action: $action"
 
+seconds_per_sat=21
+
 if [ $action = "auth_client" ]; then
     # Log raw custom data
     log_message "Raw custom data: $7"
@@ -34,7 +36,7 @@ if [ $action = "auth_client" ]; then
     
     if [ -n "$amount" ]; then
         # Convert amount (sats) to minutes, then to seconds
-        session_length=$((amount *  60))
+        session_length=$((amount *  seconds_per_sat))
         log_message "Amount paid: $amount sats"
         log_message "Session length: $session_length seconds (${amount} minutes)"
         
