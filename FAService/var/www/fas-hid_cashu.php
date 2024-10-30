@@ -338,16 +338,17 @@ function login_page() {
                 // Generate token
                 $tok = hash('sha256', $hid.$key);
 
-                // Debug token generation
-                echo "<!-- Debug Info:
-                HID: $hid
-                Key: $key
-                Combined: " . $hid.$key . "
-                Token: " . hash('sha256', $hid.$key) . "
-                -->";
+                // Debug token generation - visible version
+                echo '<div class="debug-message" style="background: #f0f0f0; color: #333; padding: 15px; margin: 10px 0; border-radius: 5px; font-family: monospace;">';
+                echo "<strong>Token Generation Debug Info:</strong><br>";
+                echo "HID: " . htmlspecialchars($hid) . "<br>";
+                echo "Key: " . htmlspecialchars($key) . "<br>";
+                echo "Combined: " . htmlspecialchars($hid.$key) . "<br>";
+                echo "Token: " . htmlspecialchars($tok) . "<br>";
+                echo "</div>";
     
                 // Set custom data
-                $custom = base64_encode("amount=" . $response['total_amount']);
+                $custom = base64_encode("amount=" . $response[' total_amount']);
     
                 // Construct redirect URL
                 $redir = "http://" . $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_NAME'] . "?fas=" . $GLOBALS["fas"] . "&landing=1";
@@ -355,13 +356,15 @@ function login_page() {
                 // Construct auth URL
                 $authaction = "http://$gatewayaddress/opennds_auth/";
     
-                // Debug information
-                echo "<!-- Debug Info:
-                HID: $hid
-                Key: $key
-                Token: $tok
-                Redir: $redir
-                -->";
+                // Debug authentication info - visible version
+                echo '<div class="debug-message" style="background: #f0f0f0; color: #333; padding: 15px; margin: 10px 0; border-radius: 5px; font-family: monospace;">';
+                echo "<strong>Authentication Debug Info:</strong><br>";
+                echo "Gateway Address: " . htmlspecialchars($gatewayaddress) . "<br>";
+                echo "Auth Action: " . htmlspecialchars($authaction) . "<br>";
+                echo "Token: " . htmlspecialchars($tok) . "<br>";
+                echo "Custom Data: " . htmlspecialchars($custom) . "<br>";
+                echo "Redirect URL: " . htmlspecialchars($redir) . "<br>";
+                echo "</div>";
     
                 echo "
                     <form id='auth_form' action='$authaction' method='get'>
@@ -375,11 +378,14 @@ function login_page() {
                     </script>
                 ";
                 
-                // Also show the complete URL for debugging
-                echo "<p>Debug URL: " . $authaction . "?tok=" . $tok . "&custom=" . $custom . "</p>";
+                // Complete URL for debugging
+                echo '<div class="debug-message" style="background: #f0f0f0; color: #333; padding: 15px; margin: 10px 0; border-radius: 5px; font-family: monospace;">';
+                echo "<strong>Complete Authentication URL:</strong><br>";
+                echo htmlspecialchars($authaction . "?tok=" . $tok . "&custom=" . $custom . "&redir=" . urlencode($redir));
+                echo "</div>";
+                
                 return;
-            }
-            
+            }            
             // Handle specific error cases
             if (isset($response['detail'])) {
                 throw new Exception($response['detail']);
