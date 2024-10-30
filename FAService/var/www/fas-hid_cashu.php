@@ -330,12 +330,45 @@ function login_page() {
 
             // Check if payment was successful
             if (isset($response['paid']) && $response['paid'] === true) {
-                // Payment successful - redirect to thank you page
-                $_GET['fullname'] = 'E-cash User'; // Set a default name
-                $_GET['email'] = 'ecash@user.com'; // Set a default email
-                thankyou_page(); // This will handle the authentication
+                // Get required authentication parameters
+                $gatewayaddress = $GLOBALS["gatewayaddress"];
+                $hid = $GLOBALS["hid"];
+                $key = $GLOBALS["key"];
+    
+                // Debug token generation
+                echo "<!-- Debug Info:
+                HID: $hid
+                Key: $key
+                Combined: " . $hid.$key . "
+                Token: " . hash('sha256', $hid.$key) . "
+                -->";
+    
+                // Generate authentication token
+                $tok = hash('sha256', $hid.$key);
+    
+                // Set custom data
+                $custom = base64_encode("amount=" . $response['total_amount']);
+    
+                // Construct authentication URL with debug query parameter
+                $authaction = "http://$gatewayaddress/opennds_auth/";
+    
+                // Construct the authentication form and submit it automatically
+                echo "
+                    <form id='auth_form' action='$authaction' method='get'>
+                        <input type='hidden' name='tok' value='$tok'>
+                        <input type='hidden' name='custom' value='$custom'>
+                        <input type='hidden' name='redir' value='http://$gatewayaddress/success.html'>
+                    </form>
+                    <script>
+                        console.log('Submitting auth form with token: $tok');
+                        // document.getElementById('auth_form').submit();
+                    </script>
+                ";
+                
+                // Also show the complete URL for debugging
+                echo "<p>Debug URL: " . $authaction . "?tok=" . $tok . "&custom=" . $custom . "</p>";
                 return;
-            } 
+            }
             
             // Handle specific error cases
             if (isset($response['detail'])) {
