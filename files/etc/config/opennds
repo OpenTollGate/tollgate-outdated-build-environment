@@ -5,7 +5,7 @@ config opennds
     option fasport '80'
     option fasremoteip '78.47.249.97'
     option faspath '/fas-hid.php'
-    option fas_secure_enabled '1'
+    option fas_secure_enabled '0'
     option faskey '55a63ea290a811d9041e15bde2bf80b356f3fb0e449fbf61f5206339'
     # Remove or comment out these as we're using remote FAS
     # option login_option_enabled '3'
