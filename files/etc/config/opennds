@@ -8,6 +8,12 @@ config opennds
     option fas_secure_enabled '1'
     option session_timeout 'custom'
     option faskey '55a63ea290a811d9041e15bde2bf80b356f3fb0e449fbf61f5206339'
+
+    # Walled garden entries for FAS server
+    list walledgarden '78.47.249.97/fas-hid_cashu.php'
+    list walledgarden '78.47.249.97'
+    list walledgarden 'mint.minibits.cash'  # If using minibits
+
     # Remove or comment out these as we're using remote FAS
     # option login_option_enabled '3'
     # option themespec_path '/usr/lib/opennds/theme_voucher.sh'
