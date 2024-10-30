@@ -348,7 +348,7 @@ function login_page() {
                 echo "</div>";
     
                 // Set custom data
-                $custom = base64_encode("amount=" . $response[' total_amount']);
+                $custom = base64_encode("amount=" . $response['total_amount']);
     
                 // Construct redirect URL
                 $redir = "http://" . $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_NAME'] . "?fas=" . $GLOBALS["fas"] . "&landing=1";
