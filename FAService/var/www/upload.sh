@@ -29,5 +29,13 @@ ssh root@${ROUTER_IP} "
 chmod +x /usr/lib/opennds/custombinauth.sh
 chmod +x /usr/lib/opennds/binauth_log.sh
 chmod +x /usr/lib/opennds/client_params.sh
+
+# Upload and execute UCI configuration script
+scp ../../../files/root/configure_fas.sh root@${ROUTER_IP}:/root/
+ssh root@${ROUTER_IP} "
+chmod +x /root/configure_fas.sh
+/root/configure_fas.sh
+"
+
 reboot
 "
