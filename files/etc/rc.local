@@ -8,7 +8,7 @@
 # /etc/init.d/dnsmasq enable
 # /etc/init.d/dnsmasq start
 
-/etc/init.d/hotspot_manager enable
-/etc/init.d/hotspot_manager start
+# /etc/init.d/hotspot_manager enable
+# /etc/init.d/hotspot_manager start
 
 exit 0
