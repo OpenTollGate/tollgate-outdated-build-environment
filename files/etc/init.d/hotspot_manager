@@ -8,6 +8,10 @@ PROG=/bin/sh
 
 hotspot_interface="radio0"
 
+log_action() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> /tmp/hotspot_manager.log
+}
+
 start_service() {
     procd_open_instance
     procd_set_param command $PROG -c '
@@ -34,7 +38,7 @@ cat << "EOF" | sh
 
         # Function to restart network and wait for it to be ready
         restart_network() {
-            echo "Restarting network..."
+            log_action "Restarting network..."
             /etc/init.d/network restart
 	    service openvpn restart
             
@@ -42,66 +46,74 @@ cat << "EOF" | sh
             local attempt=1
             while [ $attempt -le $max_attempts ]; do
                 if check_network; then
-                    echo "Network is up after $attempt seconds"
+                    log_action "Network is up after $attempt seconds"
                     return 0
                 fi
-                echo "Waiting for network to come up (attempt $attempt/$max_attempts)..."
+                log_action "Waiting for network to come up (attempt $attempt/$max_attempts)..."
                 sleep 1
                 attempt=$((attempt + 1))
             done
             
-            echo "Network did not come up after $max_attempts seconds"
+            log_action "Network did not come up after $max_attempts seconds"
             return 1
         }
 
         hotspot_ssid=$(get_hotspot_ssid)
 
-        # Set the SSID
+        log_action "Setting SSID to $hotspot_ssid"
+        Simulate setting SSID
         uci set wireless.default_radio0.ssid="$hotspot_ssid"
         uci commit wireless
 
         while true; do
-            echo "Checking conditions at $(date)"
+            network_available=false
+            opends_responsive=false
+
+            log_action "Checking conditions at $(date)"
             if check_network; then
-                echo "Internet is available"
+                log_action "Internet is available"
+                network_available=true
             else
-                echo "Internet is not available"
-                if restart_network; then
-                    echo "Network successfully restarted"
-                else
-                    echo "Failed to restart network"
-                fi
+                log_action "Internet is not available"
+                #if restart_network; then
+                #    log_action "Network successfully restarted"
+                #else
+                #    log_action "Failed to restart network"
+                #fi
             fi
 
             if ndsctl json >/dev/null 2>&1; then
-                echo "OpenNDS is responsive"
+                log_action "OpenNDS is responsive"
+                opends_responsive=true
             else
-                echo "OpenNDS is not responsive"
+                log_action "OpenNDS is not responsive"
             fi
 
             current_status=$(uci get wireless.default_radio0.disabled)
-            echo "Current WiFi status: $([ "$current_status" = "0" ] && echo "Enabled" || echo "Disabled")"
+            log_action "Current WiFi status: $([ "$current_status" = "0" ] && echo "Enabled" || echo "Disabled")"
 
-            if check_network && ndsctl json >/dev/null 2>&1; then
+            if [ "$network_available" = true ] && [ "$opends_responsive" = true ]; then
                 if [ "$current_status" != "0" ]; then
-                    echo "Internet and OpenNDS are available. Turning on WiFi hotspot."
+                    log_action "Internet and OpenNDS are available. Turning on WiFi."
                     uci set wireless.default_radio0.disabled=0
                     uci commit wireless
-                    wifi up
+                    wifi  up
                 else
-                    echo "WiFi hotspot is already on and Internet and OpenNDS are available."
+                    log_action "WiFi hotspot is already on and Internet and OpenNDS are available."
                 fi
+		sleep 600
             else
                 if [ "$current_status" != "1" ]; then
-                    echo "Internet or OpenNDS is not available. Turning off WiFi hotspot."
-                    uci set wireless.default_radio0.disabled=1
-                    uci commit wireless
-                    wifi down
+                    log_action "Internet or OpenNDS is not available."
+                    # Simulate disabling WiFi hotspot
+                    # uci set wireless.default_radio0.disabled=1
+                    # uci commit wireless
+                    # wifi down
                 else
-                    echo "WiFi hotspot is already off and Internet or OpenNDS is not available."
+                    log_action "WiFi hotspot is off and Internet or OpenNDS is not available."
                 fi
+		sleep 60
             fi
-            sleep 60
         done
 EOF
     '
