@@ -749,7 +749,7 @@ function display_terms () {
 function insert_css() {
 	echo "
 	body {
-		background-color: lightgrey;
+		background-color: #FFF5E9; /* Light orange background */
 		color: #140f07;
 		margin: 0;
 		padding: 10px;
@@ -764,30 +764,33 @@ function insert_css() {
 		margin-right:auto;
 		border-style:inset;
 		border-width:5px;
+		border-color: #F7931A; /* Bitcoin orange */
 	}
 
-	.offset {
-		background: rgba(300, 300, 300, 0.6);
+        .offset {
+		background: rgba(247, 147, 26, 0.1); /* Transparent Bitcoin orange */
 		border-radius: 10px;
-		margin-left:auto;
-		margin-right:auto;
-		max-width:600px;
-		min-width:200px;
+		margin-left: auto;
+		margin-right: auto;
+		max-width: 600px;
+		min-width: 200px;
 		padding: 5px;
+		border: 1px solid #F7931A; /* Bitcoin orange border */
 	}
 
 	.insert {
-		background: rgba(350, 350, 350, 0.7);
-		border: 2px solid #aaa;
+		background: rgba(120, 47, 238, 0.1); /* Transparent Nostr purple */
+		border: 2px solid #782FEE; /* Nostr purple border */
 		border-radius: 10px;
-		min-width:200px;
-		max-width:100%;
+		min-width: 200px;
+		max-width: 100%;
 		padding: 5px;
 	}
 
 	.insert > h1 {
 		font-size: medium;
 		margin: 0 0 15px;
+		color: #F7931A; /* Bitcoin orange */
 	}
 
 	img {
@@ -796,47 +799,55 @@ function insert_css() {
 		margin-left: 0%;
 		margin-right: 10px;
 		border-radius: 3px;
+		border: 2px solid #782FEE; /* Nostr purple border */
 	}
 
 	input[type=text], input[type=email], input[type=password], input[type=number], input[type=tel] {
 		font-size: 1em;
 		line-height: 2em;
 		height: 2em;
-		color: #0c232a;
-		background: lightgrey;
+		color: #140f07;
+		background: #FFF5E9;
+		border: 1px solid #F7931A; /* Bitcoin orange border */
+		border-radius: 5px;
 	}
 
 	input[type=submit], input[type=button] {
-			font-size: 1em;
+		font-size: 1em;
 		line-height: 2em;
 		height: 2em;
 		font-weight: bold;
 		border: 0;
 		border-radius: 10px;
-		background-color: #1a7856;
+		background-color: #F7931A; /* Bitcoin orange background */
 		padding: 0 10px;
 		color: #fff;
 		cursor: pointer;
-		box-shadow: rgba(50, 50, 93, 0.1) 0 0 0 1px inset,
-		rgba(50, 50, 93, 0.1) 0 2px 5px 0, rgba(0, 0, 0, 0.07) 0 1px 1px 0;
+		box-shadow: rgba(247, 147, 26, 0.2) 0 0 0 1px inset,
+		rgba(247, 147, 26, 0.2) 0 2px 5px 0, rgba(0, 0, 0, 0.07) 0 1px 1px 0;
+	}
+
+	input[type=submit]:hover, input[type=button]:hover {
+		background-color: #782FEE; /* Nostr purple on hover */
+		transition: 0.3s;
 	}
 
 	med-blue {
 		font-size: 1.2em;
-		color: #0073ff;
+		color: #F7931A; /* Bitcoin orange instead of blue */
 		font-weight: bold;
 		font-style: normal;
 	}
 
 	big-red {
 		font-size: 1.5em;
-		color: #c20801;
+		color: #782FEE; /* Nostr purple instead of red */
 		font-weight: bold;
 	}
 
 	italic-black {
 		font-size: 1em;
-		color: #0c232a;
+		color: #F7931A; /* Bitcoin orange */
 		font-weight: bold;
 		font-style: italic;
 		margin-bottom: 10px;
@@ -844,7 +855,7 @@ function insert_css() {
 
 	copy-right {
 		font-size: 0.7em;
-		color: darkgrey;
+		color: #782FEE; /* Nostr purple */
 		font-weight: bold;
 		font-style: italic;
 	}
