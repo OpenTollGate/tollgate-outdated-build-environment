@@ -261,7 +261,7 @@ if [ ! -f /etc/first_login_done ]; then
         # Setup WiFi
         setup_wifi
         if verify_wifi_connection; then
-	    setup_vpn
+	    # setup_vpn
 	    setup_opennds
 
 	    # echo "Repeating opennds setup to get a DHCP lease..."

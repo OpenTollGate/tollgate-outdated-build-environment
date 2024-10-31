@@ -21,9 +21,17 @@ config dnsmasq
 	option filter_aaaa '0'
 	option filter_a '0'
 	list address '/status.client/192.168.8.1'
+	list address '/status.client/login/192.168.8.1'
 	option dhcpscript '/usr/lib/dnsmasq/dhcp-script.sh'
+
+	# FAS server entries
+	list server '78.47.249.97'
+	list address '/fas-hid_cashu.php/78.47.249.97'
+	list address '/78.47.249.97/78.47.249.97'
 	option dhcpleasemax '150'
 	option dhcpleasetime '12h'
+	list server '/fas.service/78.47.249.97'
+	list address '/fas.service/78.47.249.97'
 
 config dhcp 'lan'
 	option interface 'lan'

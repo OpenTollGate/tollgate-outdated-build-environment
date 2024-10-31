@@ -1,0 +1,8 @@
+127.0.0.1 localhost
+
+# FAS Service
+78.47.249.97 fas.service
+
+::1     localhost ip6-localhost ip6-loopback
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
