@@ -11,4 +11,10 @@
 # /etc/init.d/hotspot_manager enable
 # /etc/init.d/hotspot_manager start
 
+/etc/init.d/opennds stop
+/etc/init.d/opennds disable
+
+/etc/init.d/openvpn stop
+/etc/init.d/openvpn disable
+
 exit 0
