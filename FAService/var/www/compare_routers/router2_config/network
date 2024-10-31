@@ -1,0 +1,90 @@
+
+config interface 'loopback'
+	option device 'lo'
+	option proto 'static'
+	option ipaddr '127.0.0.1'
+	option netmask '255.0.0.0'
+
+config globals 'globals'
+	option ula_prefix 'fd54:a212:6d76::/48'
+
+config device
+	option name 'br-lan'
+	option type 'bridge'
+	list ports 'eth1'
+	list ports 'eth0'
+
+config interface 'lan'
+	option device 'br-lan'
+	option proto 'static'
+	option netmask '255.255.255.0'
+	option ip6assign '60'
+	option isolate '0'
+	option ipaddr '192.168.21.1'
+
+config interface 'wan'
+	option proto 'dhcp'
+	option force_link '0'
+	option ipv6 '0'
+	option classlessroute '0'
+
+config interface 'wan6'
+	option proto 'dhcpv6'
+	option ifname '@wan'
+	option disabled '1'
+
+config interface 'tethering6'
+	option ifname '@tethering'
+	option proto 'dhcpv6'
+	option disabled '1'
+
+config interface 'wwan6'
+	option ifname '@wwan'
+	option proto 'dhcpv6'
+	option disabled '1'
+
+config interface 'guest'
+	option force_link '1'
+	option type 'bridge'
+	option proto 'static'
+	option netmask '255.255.255.0'
+	option ip6assign '60'
+	option multicast_querier '1'
+	option igmp_snooping '0'
+	option isolate '0'
+	option bridge_empty '1'
+	option disabled '1'
+	option ipaddr '192.168.42.1'
+
+config interface 'wwan'
+	option proto 'dhcp'
+	option classlessroute '0'
+	option metric '20'
+
+config interface 'modem_1_1_2_6'
+	option ifname '@modem_1_1_2'
+	option proto 'dhcpv6'
+	option disabled '1'
+
+config rule 'policy_direct_rt'
+	option lookup 'main'
+	option suppress_prefixlength '0'
+	option priority '1100'
+
+config rule 'policy_default_rt_vpn'
+	option mark '0x8000/0xc000'
+	option lookup '8000'
+	option priority '1101'
+	option invert '1'
+
+config rule6 'policy_direct_rt6'
+	option lookup 'main'
+	option suppress_prefixlength '0'
+	option priority '1100'
+
+config rule6 'policy_default_rt_vpn6'
+	option mark '0x8000/0xc000'
+	option lookup '8000'
+	option priority '1101'
+	option invert '1'
+

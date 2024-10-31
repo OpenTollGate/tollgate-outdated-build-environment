@@ -1,0 +1,14 @@
+#!/bin/sh
+
+# Wait for the VPN interface to be up
+while ! ip link show tun0 >/dev/null 2>&1; do
+  sleep 1
+done
+
+# Add custom firewall rules
+iptables -t nat -A POSTROUTING -o tun0 -j MASQUERADE
+iptables -I FORWARD -i br-lan -o tun0 -j ACCEPT
+iptables -I FORWARD -i tun0 -o br-lan -j ACCEPT
+
+# Prevent traffic leaking when VPN is down
+iptables -I FORWARD -i br-lan -o phy0-sta0 -j DROP

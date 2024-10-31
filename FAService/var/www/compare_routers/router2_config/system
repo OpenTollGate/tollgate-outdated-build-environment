@@ -1,0 +1,24 @@
+
+config system
+	option timezone 'UTC'
+	option log_size '64'
+	option urandom_seed '0'
+	option hostname 'GL-AR300M'
+	option compat_version '1.0'
+	option ttylogin '1'
+	option cronloglevel '10'
+
+config timeserver 'ntp'
+	option enabled '1'
+	option enable_server '0'
+	list server '0.openwrt.pool.ntp.org'
+	list server '1.openwrt.pool.ntp.org'
+	list server '2.openwrt.pool.ntp.org'
+	list server '3.openwrt.pool.ntp.org'
+
+config led 'led_lan'
+	option name 'LAN'
+	option sysfs 'gl-ar300m:green:lan'
+	option trigger 'switch0'
+	option port_mask '0x02'
+

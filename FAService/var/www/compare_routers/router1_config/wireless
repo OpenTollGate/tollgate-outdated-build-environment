@@ -1,0 +1,26 @@
+
+config wifi-device 'radio0'
+	option type 'mac80211'
+	option path 'platform/ahb/18100000.wmac'
+	option channel '1'
+	option band '2g'
+	option htmode 'HT20'
+	option disabled '0'
+	option cell_density '0'
+
+config wifi-iface 'default_radio0'
+	option device 'radio0'
+	option network 'lan'
+	option mode 'ap'
+	option ssid 'TollGate_612fc7d9'
+	option encryption 'none'
+	option disabled '1'
+
+config wifi-iface 'wifinet1'
+	option device 'radio0'
+	option mode 'sta'
+	option network 'wwan'
+	option ssid 'COWORK'
+	option encryption 'psk-mixed'
+	option key 'coworking'
+
