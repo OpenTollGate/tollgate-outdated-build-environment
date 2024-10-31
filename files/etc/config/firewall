@@ -1,7 +1,7 @@
 
 config defaults
 	option syn_flood '1'
-	option input 'REJECT'
+	option input 'ACCEPT'
 	option output 'ACCEPT'
 	option forward 'REJECT'
 
@@ -131,10 +131,6 @@ config rule
 	option proto 'udp'
 	option target 'ACCEPT'
 
-config include 'opennds'
-	option type 'script'
-	option path '/usr/lib/opennds/restart.sh'
-
 config redirect
 	option name 'OpenNDS'
 	option src 'lan'
@@ -144,15 +140,20 @@ config redirect
 	option target 'DNAT'
 
 config rule
-        option name 'Allow-OpenNDS-FAS'
-        option src 'lan'
-        option proto 'tcp'
-        option dest_port '2090'
-        option target 'ACCEPT'
+	option name 'Allow-OpenNDS-FAS'
+	option src 'lan'
+	option proto 'tcp'
+	option dest_port '2090'
+	option target 'ACCEPT'
 
 config rule
 	option name 'Allow FAS Server'
 	option src 'lan'
 	option dest 'wan'
-	option dest_ip '37.27.205.50'
+	option dest_ip '78.47.249.97'
 	option target 'ACCEPT'
+
+config include 'opennds'
+	option type 'script'
+	option path '/usr/lib/opennds/restart.sh'
+

@@ -1,7 +1,7 @@
 
 config defaults
 	option syn_flood '1'
-	option input 'REJECT'
+	option input 'ACCEPT'
 	option output 'ACCEPT'
 	option forward 'REJECT'
 
@@ -150,7 +150,7 @@ config rule
 	option name 'Allow FAS Server'
 	option src 'lan'
 	option dest 'wan'
-	option dest_ip '37.27.205.50'
+	option dest_ip '78.47.249.97'
 	option target 'ACCEPT'
 
 config include 'opennds'

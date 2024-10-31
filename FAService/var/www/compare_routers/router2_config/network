@@ -17,10 +17,10 @@ config device
 config interface 'lan'
 	option device 'br-lan'
 	option proto 'static'
+	option ipaddr '192.168.21.1'
 	option netmask '255.255.255.0'
 	option ip6assign '60'
 	option isolate '0'
-	option ipaddr '192.168.21.1'
 
 config interface 'wan'
 	option proto 'dhcp'
