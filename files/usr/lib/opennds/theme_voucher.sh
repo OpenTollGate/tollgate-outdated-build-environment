@@ -119,16 +119,20 @@ check_voucher() {
     output=$(grep $voucher $voucher_roll | head -n 1) # Store first occurence of voucher as variable
     #echo "$output <br>" #Matched line
     if [ $(echo -n "$voucher" | grep -ic "cashu") -ge 1 ]; then
-	echo "$voucher" > /tmp/ecash.md
+	# Compute checksum of voucher and store in variable
+	checksum=$(echo -n "$voucher" | sha256sum | cut -d' ' -f1)
+
+	# Use checksum in filename
+	ecash_file="/tmp/ecash_${checksum}.md"
+
+	# Echo voucher to file with checksum in name
+	echo "$voucher" > "$ecash_file"
+
 	# Read the LNURL from user_inputs.json
 	lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
 
-	# Echo the voucher to a temporary file
-	echo "$voucher" > /tmp/ecash.md
-
 	# Make the curl request using the LNURL from user_inputs.json
-	response=$(/www/cgi-bin/./curl_request.sh /tmp/ecash.md "$lnurl")
-
+	response=$(/www/cgi-bin/./curl_request.sh "$ecash_file" "$lnurl")
 	# Parse the JSON response and check if "paid" is true
 	paid=$(echo "$response" | jq -r '.paid')
 	if [ "$paid" = "true" ]; then
