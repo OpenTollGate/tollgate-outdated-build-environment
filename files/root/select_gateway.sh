@@ -25,6 +25,8 @@ fi
 NEW_SSID=$(echo "$network_json" | jq -r '.ssid')
 ENCRYPTION_TYPE=$(echo "$network_json" | jq -r '.encryption' | tr '[:upper:]' '[:lower:]')
 
+echo "New SSID: $NEW_SSID"
+
 # Check if we successfully parsed the SSID and encryption type
 if [ -z "$NEW_SSID" ] || [ -z "$ENCRYPTION_TYPE" ]; then
     echo "Failed to parse SSID or encryption type from the selected network details."
@@ -60,7 +62,7 @@ uci set wireless.wifinet1=wifi-iface
 uci set wireless.wifinet1.device='radio0'
 uci set wireless.wifinet1.mode='sta'
 uci set wireless.wifinet1.network='wwan'
-uci set wireless.wifinet1.ssid="$NEW_SSID"
+uci set wireless.wifinet1.ssid=''"$NEW_SSID"''
 
 # Set encryption based on the parsed type
 case "$ENCRYPTION_TYPE" in
