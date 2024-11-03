@@ -119,21 +119,25 @@ check_voucher() {
     output=$(grep $voucher $voucher_roll | head -n 1) # Store first occurence of voucher as variable
     #echo "$output <br>" #Matched line
     if [ $(echo -n "$voucher" | grep -ic "cashu") -ge 1 ]; then
-	echo "$voucher" > /tmp/ecash.md
+	# Compute checksum of voucher and store in variable
+	checksum=$(echo -n "$voucher" | sha256sum | cut -d' ' -f1)
+
+	# Use checksum in filename
+	ecash_file="/tmp/ecash_${checksum}.md"
+
+	# Echo voucher to file with checksum in name
+	echo "$voucher" > "$ecash_file"
+
 	# Read the LNURL from user_inputs.json
 	lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
 
-	# Echo the voucher to a temporary file
-	echo "$voucher" > /tmp/ecash.md
-
 	# Make the curl request using the LNURL from user_inputs.json
-	response=$(/www/cgi-bin/./curl_request.sh /tmp/ecash.md "$lnurl")
-
+	response=$(/www/cgi-bin/./curl_request.sh "$ecash_file" "$lnurl")
 	# Parse the JSON response and check if "paid" is true
 	paid=$(echo "$response" | jq -r '.paid')
 	if [ "$paid" = "true" ]; then
             total_amount=$(echo "$response" | jq -r '.total_amount // 0')
-            echo "Melted $total_amount SATs over lightning successfully! <br>"
+            echo "Redeemed $total_amount SATs over lightning successfully! <br>"
             if [ "$total_amount" -gt 0 ]; then
                 current_time=$(date +%s)
 		upload_rate=0
@@ -148,15 +152,17 @@ check_voucher() {
 		echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
                 return 0
 	    else
-		echo "Failed to melt e-cash note over lightning ${voucher}. <br>"
-		echo "Response from melting service: ${response} <br>"
-		echo "Please report this issue to the TollGate developers. <br>"
+		echo "Failed to redeem e-cash note ${voucher}. <br>"
+		echo "Response from mint: ${response} <br>"
+		echo "Did you press the submit button twice? <br>"
+		echo "Please report issues to the TollGate developers. <br>"
 		return 1
 	    fi
 	else
-	    echo "Failed to melt e-cash note over lightning ${voucher}. <br>"
-	    echo "Response from melting service ${response}. <br>"
-	    echo "Please report this issue to the TollGate developers. <br>"
+	    echo "Failed to redeem e-cash note ${voucher}. <br>"
+	    echo "Response from mint ${response}. <br>"
+	    echo "Did you press the submit button twice? <br>"
+	    echo "Please report issues to the TollGate developers. <br>"
 	    return 1
 	fi
 
@@ -289,7 +295,7 @@ voucher_form() {
         <form action=\"/opennds_preauth/\" method=\"get\">
             <input type=\"hidden\" name=\"fas\" value=\"$fas\">
             <input type=\"hidden\" name=\"tos\" value=\"accepted\">
-            Pay with e-cash from minibits.cash <br>
+            Only accepting notes from minibits.cash <br>
             Pay here: <input type=\"text\" name=\"voucher\" value=\"$voucher_code\" required> <input type=\"submit\" value=\"Connect\" >
         </form>
         <br>

@@ -274,7 +274,7 @@ body() {
     elif [ "$status" = "err511" ]; then
 
 	pagebody="
-			<h1>Pay for internet access with e-cash, 1 SAT per minute. </h1>
+			<h1>Pay for internet access with e-cash, 1 minute per SAT. </h1>
 			<form action=\"$url/login\" method=\"get\" target=\"_blank\">
 			<input type=\"submit\" value=\"Start\" >
 			</form>
