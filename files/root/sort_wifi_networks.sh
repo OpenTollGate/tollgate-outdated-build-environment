@@ -57,32 +57,24 @@ select_ssid() {
         return 1
     fi
 
-    # Capture SSID List
-    local ssid_list
-    ssid_list=$(echo "$sorted_json" | jq -r '.[] | .ssid')
-
-    if [ -z "$ssid_list" ]; then
-        echo "No SSIDs available to select."
-        return 1
-    fi
+    # Store the full JSON for later use
+    echo "$sorted_json" > /tmp/networks.json
 
     echo "Available SSIDs:"
-    i=1
-    while IFS= read -r ssid; do
-        echo "$i) $ssid"
-        eval "ssid_$i='$ssid'"
-        i=$((i+1))
-    done <<EOF
-$ssid_list
-EOF
+    # Use jq to number and display the SSIDs
+    echo "$sorted_json" | jq -r 'to_entries | .[] | "\(.key + 1)) \(.value.ssid)"'
+
+    local num_networks
+    num_networks=$(echo "$sorted_json" | jq length)
 
     while true; do
         read -p "Enter the number of the SSID you want to connect to: " selection
-        if [ "$selection" -ge 1 ] 2>/dev/null && [ "$selection" -lt "$i" ]; then
-            eval "selected_ssid=\$ssid_$selection"
+        if [ "$selection" -ge 1 ] 2>/dev/null && [ "$selection" -le "$num_networks" ]; then
+            # Use jq to get the selected network (array is 0-based, so subtract 1 from selection)
+            local index=$((selection - 1))
+            selected_json=$(echo "$sorted_json" | jq ".[$index]")
+            selected_ssid=$(echo "$selected_json" | jq -r '.ssid')
             echo "You selected SSID: $selected_ssid"
-            selected_json=$(echo "$sorted_json" | jq -r --arg ssid "$selected_ssid" '.[] | select(.ssid == $ssid)')
-            echo "$selected_json"
             
             # Write the selected JSON tuple to /tmp/selected_ssid.md
             echo "$selected_json" > /tmp/selected_ssid.md
@@ -90,7 +82,7 @@ EOF
             
             return 0
         else
-            echo "Invalid selection. Please enter a valid number."
+            echo "Invalid selection. Please enter a number between 1 and $num_networks."
         fi
     done
 }

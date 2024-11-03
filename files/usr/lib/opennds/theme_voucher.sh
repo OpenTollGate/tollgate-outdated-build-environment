@@ -137,7 +137,7 @@ check_voucher() {
 	paid=$(echo "$response" | jq -r '.paid')
 	if [ "$paid" = "true" ]; then
             total_amount=$(echo "$response" | jq -r '.total_amount // 0')
-            echo "Redeemed $total_amount SATs over lightning successfully! <br>"
+            echo "Redeemed $total_amount SATs successfully! <br>"
             if [ "$total_amount" -gt 0 ]; then
                 current_time=$(date +%s)
 		upload_rate=0

@@ -254,7 +254,7 @@ if [ ! -f /etc/first_login_done ]; then
         update_json "password_set" "true"
 
 	# Prompt for LNURL
-        echo "Enter the LNURL you would like to receive payouts on:"
+        echo "Enter your minibits LNURL to receive payments:"
         read lnurl
         update_json "payout_lnurl" "$lnurl"
 

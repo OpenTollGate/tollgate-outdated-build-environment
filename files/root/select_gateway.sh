@@ -60,7 +60,7 @@ uci set wireless.wifinet1=wifi-iface
 uci set wireless.wifinet1.device='radio0'
 uci set wireless.wifinet1.mode='sta'
 uci set wireless.wifinet1.network='wwan'
-uci set wireless.wifinet1.ssid="$NEW_SSID"
+uci set wireless.wifinet1.ssid=''"$NEW_SSID"''
 
 # Set encryption based on the parsed type
 case "$ENCRYPTION_TYPE" in
