@@ -14,7 +14,7 @@ git checkout -b $temp_branch
 git reset --soft $base_commit
 
 # Commit the changes with a new commit message
-git commit -m "Squashed commits from $current_branch"
+git commit -m "$current_branch"
 
 # Force update the original branch
 git branch -f $current_branch $temp_branch
