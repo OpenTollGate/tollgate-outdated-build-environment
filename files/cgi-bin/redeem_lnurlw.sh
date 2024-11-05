@@ -1,16 +1,23 @@
-#!/bin/sh -e
+#!/bin/sh
 
-##!/bin/sh -e
-#set -x
+# Enable error tracking and debugging
+set -x  # Uncomment for debugging
 
 # API URLs
 LNURL_DECODE_API_URL="https://demo.lnbits.com/api/v1/payments/decode"
 LNURLP_URL="https://minibits.cash/.well-known/lnurlp/chandran"
-API_KEY="5d0605a2fa0d4d6c8fe13fdec25720ca"
+API_KEY="9f0f385354234f29a54a538a3ee680ea"
 
-# Accept LNURLW and VERBOSE as arguments to the script
+# Accept LNURLW as argument to the script
 LNURLW="$1"
-VERBOSE="false"
+VERBOSE="${2:-false}"
+
+# Check if LNURLW is provided
+if [ -z "$LNURLW" ]; then
+    echo "Error: LNURLW parameter is required"
+    echo "Usage: $0 <LNURLW> [verbose]"
+    exit 1
+fi
 
 # Function to print verbose messages
 log_verbose() {
@@ -58,7 +65,7 @@ get_bolt11_invoice() {
     log_verbose "Max sendable amount: $max_sendable msats"
     
     # Request 1 satoshi (1000 msats)
-    amount=1000
+    amount=8000
     lnurl_payment_request=$(curl -s "$LNURLP_URL?amount=$amount")
     bolt11_invoice=$(echo $lnurl_payment_request | jq -r '.pr')
     
