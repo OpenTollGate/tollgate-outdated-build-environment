@@ -10,5 +10,6 @@
 
 /etc/init.d/hotspot_manager enable
 /etc/init.d/hotspot_manager start
+/root/./random_ip.sh
 
 exit 0

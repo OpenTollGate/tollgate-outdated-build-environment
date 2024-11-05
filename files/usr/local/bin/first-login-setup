@@ -243,7 +243,7 @@ update_json() {
 
 if [ ! -f /etc/first_login_done ]; then
     if is_interactive; then
-	update_json "script_started" "$(date)"
+        update_json "script_started" "$(date)"
         echo "First login setup script started" > /tmp/first_login_debug.log
         echo "Interactive: $(is_interactive)" >> /tmp/first_login_debug.log
         echo "first_login_done exists: $([ -f /etc/first_login_done ] && echo 'yes' || echo 'no')" >> /tmp/first_login_debug.log
@@ -253,27 +253,35 @@ if [ ! -f /etc/first_login_done ]; then
         passwd
         update_json "password_set" "true"
 
-	# Prompt for LNURL
+        # Prompt for LNURL
         echo "Enter your minibits LNURL to receive payments:"
         read lnurl
         update_json "payout_lnurl" "$lnurl"
 
+        # Prompt for the operator's npub
+        echo "Enter the npub of the TollGate operator of this router:"
+        read operator_npub
+        update_json "operator_npub" "$operator_npub"
+
+        # Ask user whether they want to set up a VPN
+        echo "Do you want to set up a VPN? (yes/no):"
+        read setup_vpn_answer
+        if [ "$setup_vpn_answer" = "yes" ]; then
+            setup_vpn
+            update_json "vpn_setup" "true"
+        else
+            update_json "vpn_setup" "false"
+        fi
+
         # Setup WiFi
         setup_wifi
         if verify_wifi_connection; then
-	    # setup_vpn
-	    # setup_opennds
+            # setup_opennds # If VPN setup is enabled and we need this step
 
-	    # echo "Repeating opennds setup to get a DHCP lease..."
-	    # I tried doing repeat of a subset of `setup_opennds` in
-	    # `/root/./dhcp_lease_fix.sh`, but it didn't work. I don't
-	    # know why repeating setup_opennds helps to obtain the
-	    # DHCP lease, but putting the same logic in
-	    # `dhcp_lease_fix.sh` doesn't. Fixes that help us to get a
-	    # DHCP lease more quickly/simply are most welcome...
-            # setup_opennds
+            # echo "Repeating opennds setup to get a DHCP lease..."
+            # setup_opennds # Uncomment if we need to repeat the opennds setup
 	    
-	    touch /etc/first_login_done
+    	    touch /etc/first_login_done
             handle_dhcp_lease
         else
             update_json "setup_failed" "true"
