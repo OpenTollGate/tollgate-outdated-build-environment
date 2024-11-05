@@ -129,6 +129,7 @@ check_voucher() {
 	if [ ! -f "$ecash_file" ]; then
             # Echo voucher to file with checksum in name
             echo "$voucher" > "$ecash_file"
+	    echo "<p>The e-cash is being processed. Please wait...</p>"
 
             # Read the LNURL from user_inputs.json
             lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
