@@ -1,10 +1,11 @@
 config wifi-device 'radio0'
 	option type 'mac80211'
 	option path 'platform/ahb/18100000.wmac'
-	option channel '1'
 	option band '2g'
+	option country 'BO'
 	option htmode 'HT20'
 	option disabled '0'
+	option legacy_rates '0'
 	option cell_density '0'
 
 config wifi-iface 'default_radio0'
