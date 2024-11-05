@@ -125,45 +125,52 @@ check_voucher() {
 	# Use checksum in filename
 	ecash_file="/tmp/ecash_${checksum}.md"
 
-	# Echo voucher to file with checksum in name
-	echo "$voucher" > "$ecash_file"
+	# Only proceed if the file doesn't exist
+	if [ ! -f "$ecash_file" ]; then
+            # Echo voucher to file with checksum in name
+            echo "$voucher" > "$ecash_file"
 
-	# Read the LNURL from user_inputs.json
-	lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
+            # Read the LNURL from user_inputs.json
+            lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
 
-	# Make the curl request using the LNURL from user_inputs.json
-	response=$(/www/cgi-bin/./curl_request.sh "$ecash_file" "$lnurl")
-	# Parse the JSON response and check if "paid" is true
-	paid=$(echo "$response" | jq -r '.paid')
-	if [ "$paid" = "true" ]; then
-            total_amount=$(echo "$response" | jq -r '.total_amount // 0')
-            echo "Redeemed $total_amount SATs successfully! <br>"
-            if [ "$total_amount" -gt 0 ]; then
-                current_time=$(date +%s)
-		upload_rate=0
-		download_rate=0
-		upload_quota=0
-		download_quota=0
-                session_length=$total_amount
-		voucher_time_limit=$session_length
-                voucher_expiration=$((current_time + voucher_time_limit))
+            # Make the curl request using the LNURL from user_inputs.json
+            response=$(/www/cgi-bin/./curl_request.sh "$ecash_file" "$lnurl")
 
-                # Log the new temporary voucher
-		echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
-                return 0
+	    # Parse the JSON response and check if "paid" is true
+	    paid=$(echo "$response" | jq -r '.paid')
+	    if [ "$paid" = "true" ]; then
+		total_amount=$(echo "$response" | jq -r '.total_amount // 0')
+		echo "Redeemed $total_amount SATs successfully! <br>"
+		if [ "$total_amount" -gt 0 ]; then
+                    current_time=$(date +%s)
+		    upload_rate=0
+		    download_rate=0
+		    upload_quota=0
+		    download_quota=0
+                    session_length=$total_amount
+		    voucher_time_limit=$session_length
+                    voucher_expiration=$((current_time + voucher_time_limit))
+
+                    # Log the new temporary voucher
+		    echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
+                    return 0
+		else
+		    echo "Failed to redeem e-cash note ${voucher}. <br>"
+		    echo "Response from mint: ${response} <br>"
+		    echo "Did you press the submit button twice? <br>"
+		    echo "Please report issues to the TollGate developers. <br>"
+		    return 1
+		fi
 	    else
 		echo "Failed to redeem e-cash note ${voucher}. <br>"
-		echo "Response from mint: ${response} <br>"
+		echo "Response from mint ${response}. <br>"
 		echo "Did you press the submit button twice? <br>"
 		echo "Please report issues to the TollGate developers. <br>"
 		return 1
 	    fi
+
 	else
-	    echo "Failed to redeem e-cash note ${voucher}. <br>"
-	    echo "Response from mint ${response}. <br>"
-	    echo "Did you press the submit button twice? <br>"
-	    echo "Please report issues to the TollGate developers. <br>"
-	    return 1
+	    echo "E-cash note was already submitted, please wait for mint to respond. <br>"
 	fi
 
     elif [ $(echo -n "$voucher" | grep -ic "lnurlw") -ge 1 ]; then
