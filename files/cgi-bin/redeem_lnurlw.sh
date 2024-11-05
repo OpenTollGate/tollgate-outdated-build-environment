@@ -1,12 +1,12 @@
-#!/bin/sh
+#!/bin/sh -e
 
 # Enable error tracking and debugging
-set -x  # Uncomment for debugging
+# set -x  # Uncomment for debugging
 
 # API URLs
 LNURL_DECODE_API_URL="https://demo.lnbits.com/api/v1/payments/decode"
 LNURLP_URL="https://minibits.cash/.well-known/lnurlp/chandran"
-API_KEY="9f0f385354234f29a54a538a3ee680ea"
+API_KEY="5d0605a2fa0d4d6c8fe13fdec25720ca"
 
 # Accept LNURLW, amount, and verbose as arguments
 LNURLW="$1"
