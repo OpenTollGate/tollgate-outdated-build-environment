@@ -8,14 +8,22 @@ LNURL_DECODE_API_URL="https://demo.lnbits.com/api/v1/payments/decode"
 LNURLP_URL="https://minibits.cash/.well-known/lnurlp/chandran"
 API_KEY="9f0f385354234f29a54a538a3ee680ea"
 
-# Accept LNURLW as argument to the script
+# Accept LNURLW, amount, and verbose as arguments
 LNURLW="$1"
-VERBOSE="${2:-false}"
+AMOUNT="$2"  # New amount parameter in millisatoshis
+VERBOSE="${3:-false}"
 
-# Check if LNURLW is provided
-if [ -z "$LNURLW" ]; then
-    echo "Error: LNURLW parameter is required"
-    echo "Usage: $0 <LNURLW> [verbose]"
+# Check if LNURLW and amount are provided
+if [ -z "$LNURLW" ] || [ -z "$AMOUNT" ]; then
+    echo "Error: Both LNURLW and amount parameters are required"
+    echo "Usage: $0 <LNURLW> <amount_in_millisats> [verbose]"
+    echo "Example: $0 LNURL... 8000 true"
+    exit 1
+fi
+
+# Validate amount is a number
+if ! echo "$AMOUNT" | grep -q '^[0-9]\+$'; then
+    echo "Error: Amount must be a positive number in millisatoshis"
     exit 1
 fi
 
@@ -64,9 +72,8 @@ get_bolt11_invoice() {
     
     log_verbose "Max sendable amount: $max_sendable msats"
     
-    # Request 1 satoshi (1000 msats)
-    amount=8000
-    lnurl_payment_request=$(curl -s "$LNURLP_URL?amount=$amount")
+    # Use the amount provided as argument
+    lnurl_payment_request=$(curl -s "$LNURLP_URL?amount=$AMOUNT")
     bolt11_invoice=$(echo $lnurl_payment_request | jq -r '.pr')
     
     if [ -z "$bolt11_invoice" ]; then
