@@ -131,24 +131,12 @@ config rule
 	option proto 'udp'
 	option target 'ACCEPT'
 
-config include 'opennds'
-	option type 'script'
-	option path '/usr/lib/opennds/restart.sh'
-
-config redirect
-	option name 'OpenNDS'
+config rule
+	option name 'Allow-OpenNDS-FAS'
 	option src 'lan'
 	option proto 'tcp'
-	option src_dport '80'
 	option dest_port '2050'
-	option target 'DNAT'
-
-config rule
-        option name 'Allow-OpenNDS-FAS'
-        option src 'lan'
-        option proto 'tcp'
-        option dest_port '2090'
-        option target 'ACCEPT'
+	option target 'ACCEPT'
 
 config rule
 	option name 'Allow FAS Server'
@@ -156,3 +144,8 @@ config rule
 	option dest 'wan'
 	option dest_ip '37.27.205.50'
 	option target 'ACCEPT'
+
+config include 'opennds'
+	option type 'script'
+	option path '/usr/lib/opennds/restart.sh'
+

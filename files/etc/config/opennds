@@ -1,6 +1,7 @@
 config opennds
     option login_option_enabled '3'
     option themespec_path '/usr/lib/opennds/theme_voucher.sh'
+    option statuspath '13.4.224.1'
     option allow_preemptive_authentication '0'
     option enabled '1'
     option faskey '55a63ea290a811d9041e15bde2bf80b356f3fb0e449fbf61f5206339428c856a'

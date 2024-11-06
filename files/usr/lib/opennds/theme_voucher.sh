@@ -125,14 +125,14 @@ check_voucher() {
 	# Use checksum in filename
 	ecash_file="/tmp/ecash_${checksum}.md"
 
+        # Read the LNURL from user_inputs.json
+        lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
+
 	# Only proceed if the file doesn't exist
 	if [ ! -f "$ecash_file" ]; then
             # Echo voucher to file with checksum in name
             echo "$voucher" > "$ecash_file"
 	    echo "<p>The e-cash is being processed. Please wait...</p>"
-
-            # Read the LNURL from user_inputs.json
-            lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
 
             # Make the curl request using the LNURL from user_inputs.json
             response=$(/www/cgi-bin/./curl_request.sh "$ecash_file" "$lnurl")
@@ -142,6 +142,7 @@ check_voucher() {
 	    if [ "$paid" = "true" ]; then
 		total_amount=$(echo "$response" | jq -r '.total_amount // 0')
 		echo "Redeemed $total_amount SATs successfully! <br>"
+
 		if [ "$total_amount" -gt 0 ]; then
                     current_time=$(date +%s)
 		    upload_rate=0
@@ -175,6 +176,18 @@ check_voucher() {
 	fi
 
     elif [ $(echo -n "$voucher" | grep -ic "lnurlw") -ge 1 ]; then
+
+	# Compute checksum of voucher and store in variable
+	checksum=$(echo -n "$voucher" | sha256sum | cut -d' ' -f1)
+
+	# Use checksum in filename
+	lnurlw_file="/tmp/lnurl_${clientmac}_${checksum}.md"
+        echo "$voucher" > "$lnurlw_file"
+	
+	# response=$(/www/cgi-bin/./redeem_lnurlw.sh "$voucher" "$lnurl")
+	# ./redeem_lnurlw.sh LNURL1DP68GURN8GHJ7ER9D4HJUMRWVF5HGUEWVDHK6TMHD96XSERJV9MJ7CTSDYHHVVF0D3H82UNV9U6XG3M5XA49SSJWFDH4VKRPVUMKKM3HXE3KVG0LXTP 8000
+	# {"status":"OK", "paid_amount":256000}
+
 	echo "Voucher entered was ${voucher}. This looks like an lnurlw note that can be redeemed. <br>"
 	current_time=$(date +%s)
 	upload_rate=512    # Different rates for lnurlw, if needed
