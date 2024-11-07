@@ -195,7 +195,6 @@ check_voucher() {
 
 	# Parse the JSON response and check if "status" is "OK"
 	status=$(echo "$response" | jq -r '.status')
-	paid_amount=$(echo "$response" | jq -r '.paid_amount // 0')
 
 	if [ "$status" = "OK" ] && [ "$paid_amount" -gt 0 ]; then
             echo "Voucher entered was ${voucher}. This looks like an lnurlw note that was redeemed successfully. <br>"
@@ -205,7 +204,7 @@ check_voucher() {
 	    download_rate=0
 	    upload_quota=0
 	    download_quota=0
-            session_length=($paid_amount) / 1000
+            session_length=($amount) / 1000
 	    voucher_time_limit=$session_length
             voucher_expiration=$((current_time + voucher_time_limit))
 	    

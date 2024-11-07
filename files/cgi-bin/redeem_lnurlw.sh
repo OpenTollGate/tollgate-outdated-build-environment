@@ -5,19 +5,19 @@
 
 # API URLs
 LNURL_DECODE_API_URL="https://demo.lnbits.com/api/v1/payments/decode"
-LNURLP_URL="https://minibits.cash/.well-known/lnurlp/chandran"
 API_KEY="5d0605a2fa0d4d6c8fe13fdec25720ca"
 
-# Accept file path containing LNURLW, amount, and verbose as arguments
+# Accept file path containing LNURLW, amount, recipient LNURL, and verbose as arguments
 LNURLW_FILE="$1"
 AMOUNT="$2"  # New amount parameter in millisatoshis
-VERBOSE="${3:-false}"
+RECIPIENT_LNURL="$3"
+VERBOSE="${4:-false}"
 
-# Check if file path and amount are provided
-if [ -z "$LNURLW_FILE" ] || [ -z "$AMOUNT" ]; then
-    echo "Error: Both LNURLW file path and amount parameters are required"
-    echo "Usage: $0 <path_to_lnurlw_file> <amount_in_millisats> [verbose]"
-    echo "Example: $0 /path/to/lnurlw.txt 8000 true"
+# Check if file path, amount, and recipient LNURL are provided
+if [ -z "$LNURLW_FILE" ] || [ -z "$AMOUNT" ] || [ -z "$RECIPIENT_LNURL" ]; then
+    echo "Error: LNURLW file path, amount, and recipient LNURL parameters are required"
+    echo "Usage: $0 <path_to_lnurlw_file> <amount_in_millisats> <recipient_lnurl> [verbose]"
+    echo "Example: $0 /path/to/lnurlw.txt 8000 username@example.com true"
     exit 1
 fi
 
@@ -78,6 +78,20 @@ fi
 
 log_verbose "Callback URL: $callback_url"
 log_verbose "k1: $k1"
+
+# Extract username and domain from the recipient LNURL
+USERNAME=$(echo "$RECIPIENT_LNURL" | cut -d '@' -f 1)
+DOMAIN=$(echo "$RECIPIENT_LNURL" | cut -d '@' -f 2)
+
+if [ -z "$USERNAME" ] || [ -z "$DOMAIN" ]; then
+    echo "Error: Invalid LNURL format. Expected format: username@domain"
+    exit 1
+fi
+
+# Generate payment_request_url
+LNURLP_URL="https://$DOMAIN/.well-known/lnurlp/$USERNAME"
+
+log_verbose "LNURLP_URL: $LNURLP_URL"
 
 # Step 3: Get the dynamic BOLT11 invoice using the LNURLp
 get_bolt11_invoice() {
