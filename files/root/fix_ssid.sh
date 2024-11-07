@@ -18,7 +18,5 @@ get_hotspot_ssid() {
 
 hotspot_ssid=$(get_hotspot_ssid)
 
-log_action "Setting SSID to $hotspot_ssid"
-Simulate setting SSID
 uci set wireless.default_radio0.ssid="$hotspot_ssid"
 uci commit wireless
