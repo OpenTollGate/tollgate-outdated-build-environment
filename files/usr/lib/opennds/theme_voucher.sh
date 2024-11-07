@@ -201,15 +201,14 @@ check_voucher() {
             echo "Voucher entered was ${voucher}. This looks like an lnurlw note that was redeemed successfully. <br>"
 
             current_time=$(date +%s)
-            upload_rate=512    # Define rates for authenticated session
-            download_rate=512  # Define rates for authenticated session
-            upload_quota=10240
-            download_quota=10240
+	    upload_rate=0
+	    download_rate=0
+	    upload_quota=0
+	    download_quota=0
             session_length=($paid_amount) / 1000
-
-            voucher_time_limit=$session_length
-            voucher_expiration=$(($current_time + $voucher_time_limit))
-
+	    voucher_time_limit=$session_length
+            voucher_expiration=$((current_time + voucher_time_limit))
+	    
             # Log the voucher
             session_length=$voucher_time_limit
             echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
