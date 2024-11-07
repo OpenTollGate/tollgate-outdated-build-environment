@@ -182,11 +182,13 @@ check_voucher() {
 
 	# Use checksum in filename
 	lnurlw_file="/tmp/lnurl_${clientmac}_${checksum}.md"
-        echo "$voucher" > "$lnurlw_file"
+	echo "$voucher" > "$lnurlw_file"
 	
 	# response=$(/www/cgi-bin/./redeem_lnurlw.sh "$voucher" "$lnurl")
 	# ./redeem_lnurlw.sh LNURL1DP68GURN8GHJ7ER9D4HJUMRWVF5HGUEWVDHK6TMHD96XSERJV9MJ7CTSDYHHVVF0D3H82UNV9U6XG3M5XA49SSJWFDH4VKRPVUMKKM3HXE3KVG0LXTP 8000
 	# {"status":"OK", "paid_amount":256000}
+
+	amount="8000"
 
 	echo "Voucher entered was ${voucher}. This looks like an lnurlw note that can be redeemed. <br>"
 	current_time=$(date +%s)
