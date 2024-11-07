@@ -8,16 +8,31 @@ LNURL_DECODE_API_URL="https://demo.lnbits.com/api/v1/payments/decode"
 LNURLP_URL="https://minibits.cash/.well-known/lnurlp/chandran"
 API_KEY="5d0605a2fa0d4d6c8fe13fdec25720ca"
 
-# Accept LNURLW, amount, and verbose as arguments
-LNURLW="$1"
+# Accept file path containing LNURLW, amount, and verbose as arguments
+LNURLW_FILE="$1"
 AMOUNT="$2"  # New amount parameter in millisatoshis
 VERBOSE="${3:-false}"
 
-# Check if LNURLW and amount are provided
-if [ -z "$LNURLW" ] || [ -z "$AMOUNT" ]; then
-    echo "Error: Both LNURLW and amount parameters are required"
-    echo "Usage: $0 <LNURLW> <amount_in_millisats> [verbose]"
-    echo "Example: $0 LNURL... 8000 true"
+# Check if file path and amount are provided
+if [ -z "$LNURLW_FILE" ] || [ -z "$AMOUNT" ]; then
+    echo "Error: Both LNURLW file path and amount parameters are required"
+    echo "Usage: $0 <path_to_lnurlw_file> <amount_in_millisats> [verbose]"
+    echo "Example: $0 /path/to/lnurlw.txt 8000 true"
+    exit 1
+fi
+
+# Check if the file exists
+if [ ! -f "$LNURLW_FILE" ]; then
+    echo "Error: File '$LNURLW_FILE' does not exist"
+    exit 1
+fi
+
+# Read LNURLW from file
+LNURLW=$(cat "$LNURLW_FILE")
+
+# Check if the file is empty
+if [ -z "$LNURLW" ]; then
+    echo "Error: The provided file is empty"
     exit 1
 fi
 
@@ -102,4 +117,3 @@ else
     log_verbose "Response: $response"
     exit 1
 fi
-
