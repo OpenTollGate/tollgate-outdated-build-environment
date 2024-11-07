@@ -202,6 +202,7 @@ setup_wifi() {
                 fi
 
            	/www/cgi-bin/./generate_keys.sh
+		/root/./fix_ssid.sh
 
                 # Update JSON with WiFi details
                 update_json "wifi_ssid" "$ssid"
