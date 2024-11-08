@@ -194,18 +194,24 @@ check_voucher() {
 	echo "$paid_amount" >> /tmp/lnurlwpaid.md
 	
 	if [ "$status" = "OK" ] && [ "$paid_amount" -gt 0 ]; then
-            echo "Voucher entered was ${voucher}. This looks like an lnurlw note that was redeemed successfully. <br>"
-	    echo "lnurlw paid" >> /tmp/lnurlwpaid.md
+	    echo "lnurlw paid" > /tmp/lnurlwpaid.md
 	fi
 
-        current_time=$(date +%s)
-	upload_rate=0
-	download_rate=0
-	upload_quota=0
-	download_quota=0
-        session_length=($amount) / 1000
+	echo "Voucher entered was ${voucher}. This looks like an lnurlw note that can be redeemed. <br>"
+	current_time=$(date +%s)
+	upload_rate=512    # Different rates for lnurlw, if needed
+	download_rate=512  # Different rates for lnurlw, if needed
+	upload_quota=10240
+	download_quota=10240
+	session_length=10  # Different session length for lnurlw
 
-        echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
+	voucher_time_limit=$session_length
+
+	# Log the voucher
+	voucher_expiration=$(($current_time + $voucher_time_limit))
+	session_length=$voucher_time_limit
+	echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
+
 	return 0
     else
 	echo "No Voucher Found - Retry <br>"
