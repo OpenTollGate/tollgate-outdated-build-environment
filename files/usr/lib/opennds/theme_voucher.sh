@@ -119,7 +119,6 @@ check_voucher() {
     output=$(grep $voucher $voucher_roll | head -n 1) # Store first occurence of voucher as variable
     #echo "$output <br>" #Matched line
     # Read the LNURL from user_inputs.json
-    lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
 
     if [ $(echo -n "$voucher" | grep -ic "cashu") -ge 1 ]; then
 	# Compute checksum of voucher and store in variable
@@ -136,6 +135,7 @@ check_voucher() {
 	    echo "<p>The e-cash is being processed. Please wait...</p>"
 
             # Make the curl request using the LNURL from user_inputs.json
+	    lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
             response=$(/www/cgi-bin/./curl_request.sh "$ecash_file" "$lnurl")
 
 	    # Parse the JSON response and check if "paid" is true
@@ -184,6 +184,7 @@ check_voucher() {
         echo "$voucher" > "$lnurlw_file"
 
 	amount=1000
+	lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
 	echo "$amount" >> /tmp/lnurlwpaid.md
 	echo "$lnurlw_file" >> /tmp/lnurlwpaid.md
 	echo "$lnurl" >> /tmp/lnurlwpaid.md
