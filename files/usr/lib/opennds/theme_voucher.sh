@@ -190,11 +190,27 @@ check_voucher() {
 	status=$(echo "$response" | jq -r '.status')
 	paid_amount=$(echo "$response" | jq -r '.paid_amount')
 	
+	echo "$response" | jq -r '.status'
+	echo "$response" | jq -r '.paid_amount'
 	echo "$status" >> /tmp/lnurlwpaid.md
 	echo "$paid_amount" >> /tmp/lnurlwpaid.md
-	
-	if [ "$status" = "OK" ] && [ "$paid_amount" -gt 0 ]; then
-	    echo "lnurlw paid" > /tmp/lnurlwpaid.md
+
+	#if [ "$status" = "OK" ] && [ "$paid_amount" -gt 0 ]; then
+	#    echo "lnurlw paid" > /tmp/lnurlwpaid.md
+	#fi
+
+	if [[ -n "$response" ]]; then
+	    status=$(echo "$response" | jq -r '.status' 2>/dev/null)
+	    paid_amount=$(echo "$response" | jq -r '.paid_amount' 2>/dev/null)
+
+	    if [[ "$status" == "OK" && -n "$paid_amount" ]]; then
+	        echo "$status" >> /tmp/lnurlwpaid.md
+	        echo "$paid_amount" >> /tmp/lnurlwpaid.md
+	    else
+	        echo "Error parsing JSON or invalid response" >> /tmp/lnurlwpaid.md
+	    fi
+	else
+	    echo "Empty response from redeem_lnurlw.sh" >> /tmp/lnurlwpaid.md
 	fi
 
 	echo "Voucher entered was ${voucher}. This looks like an lnurlw note that can be redeemed. <br>"
