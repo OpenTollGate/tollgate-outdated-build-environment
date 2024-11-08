@@ -3,15 +3,13 @@
 set -x
 set -e
 
-# Function to extract URL and fas parameter from the redirect
+# Function to extract URL and FAS parameter from the page response
 get_portal_params() {
-    # Use curl with -L to follow redirects
+
     RESPONSE=$(curl -s -L http://status.client:2050)
-    
-    # Extract the portal URL from an <form> action or <a href> tag
-    # It's important to find the appropriate place/construct to fetch the URL from
-    PORTAL_URL=$(echo "$RESPONSE" | grep -oP 'action="(/opennds_preauth/)".*' | sed -n 's/.*action="$[^"]*$".*/http:\/\/status.client\1/p')
-    
+    FAS_VALUE=$(echo "$RESPONSE" | grep -o 'name="fas" value="[^"]*"' | cut -d'"' -f4)
+    PORTAL_URL="http://status.client:2050/opennds_preauth/?fas=${FAS_VALUE}&tos=accepted&voucher=cashu"
+
     if [ -z "$PORTAL_URL" ]; then
         echo "Failed to extract portal URL. Response was: $RESPONSE"
         exit 1
@@ -19,9 +17,9 @@ get_portal_params() {
 
     # Extract the 'fas' parameter from hidden input field
     FAS_PARAM=$(echo "$RESPONSE" | grep -oP 'name="fas" value="[^"]*"' | cut -d'"' -f4)
-    
+
     if [ -z "$FAS_PARAM" ]; then
-        echo "Fas parameter extraction failed"
+        echo "Failed to extract fas parameter"
         exit 1
     fi
 
