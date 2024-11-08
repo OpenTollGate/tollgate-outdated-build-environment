@@ -8,7 +8,7 @@ get_portal_params() {
 
     RESPONSE=$(curl -s -L http://status.client:2050)
     FAS_VALUE=$(echo "$RESPONSE" | grep -o 'name="fas" value="[^"]*"' | cut -d'"' -f4)
-    PORTAL_URL="http://status.client:2050/opennds_preauth/?fas=${FAS_VALUE}&tos=accepted&voucher=cashu"
+    PORTAL_URL="http://status.client:2050/opennds_preauth/?fas=${FAS_VALUE}&tos=accepted&voucher=$1"
 
     if [ -z "$PORTAL_URL" ]; then
         echo "Failed to extract portal URL. Response was: $RESPONSE"
@@ -38,7 +38,7 @@ VOUCHER_CODE="$1"
 
 # Get portal parameters
 echo "Extracting portal parameters..."
-get_portal_params
+get_portal_params "$VOUCHER_CODE"
 
 # Verify we have the required parameters
 if [ -z "$PORTAL_URL" ] || [ -z "$FAS_PARAM" ]; then
