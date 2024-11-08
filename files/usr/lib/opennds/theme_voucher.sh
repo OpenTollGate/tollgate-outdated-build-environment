@@ -182,18 +182,22 @@ check_voucher() {
 	lnurlw_file="/tmp/lnurl_${clientmac}_${checksum}.md"
         echo "$voucher" > "$lnurlw_file"
 
-	amount="1000"
+	amount=1000
+	echo "$amount" >> /tmp/lnurlwpaid.md
+	echo "$lnurlw_file" >> /tmp/lnurlwpaid.md
+	echo "$lnurl" >> /tmp/lnurlwpaid.md
 	response=$(/www/cgi-bin/./redeem_lnurlw.sh "$lnurlw_file" "$amount" "$lnurl")
 	# {"status":"OK", "paid_amount":256000}
 
 	# Parse the JSON response and check if "status" is "OK"
-	status=$(echo "$response" | jq -r '.status')
-	paid_amount=$(echo "$response" | jq -r '.paid_amount')
+	# status=$(echo "$response" | jq -r '.status')
+	# paid_amount=$(echo "$response" | jq -r '.paid_amount')
 	
-	echo "$response" | jq -r '.status'
-	echo "$response" | jq -r '.paid_amount'
-	echo "$status" >> /tmp/lnurlwpaid.md
-	echo "$paid_amount" >> /tmp/lnurlwpaid.md
+	# echo "$response" | jq -r '.status'
+	# echo "$response" | jq -r '.paid_amount'
+	# echo "$status" >> /tmp/lnurlwpaid.md
+	# echo "$paid_amount" >> /tmp/lnurlwpaid.md
+	echo "$response" >> /tmp/lnurlwpaid.md
 
 	#if [ "$status" = "OK" ] && [ "$paid_amount" -gt 0 ]; then
 	#    echo "lnurlw paid" > /tmp/lnurlwpaid.md
