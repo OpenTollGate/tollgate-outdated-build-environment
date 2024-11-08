@@ -188,7 +188,7 @@ check_voucher() {
 	# ./redeem_lnurlw.sh LNURL1DP68GURN8GHJ7ER9D4HJUMRWVF5HGUEWVDHK6TMHD96XSERJV9MJ7CTSDYHHVVF0D3H82UNV9U6XG3M5XA49SSJWFDH4VKRPVUMKKM3HXE3KVG0LXTP 8000
 	# {"status":"OK", "paid_amount":256000}
 
-	amount="8000"
+	amount="1000"
 
 	response=$(/www/cgi-bin/./redeem_lnurlw.sh "$lnurlw_file" "$amount" "$lnurl")
 	# Expecting: {"status":"OK", "paid_amount":256000}
