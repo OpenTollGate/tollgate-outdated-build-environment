@@ -10,13 +10,13 @@ get_portal_params() {
     GATEWAY_IP=$(echo "$STA_IP" | sed 's/\.[0-9]*$/.1/')
 
     if [ -f "/root/current_image" ]; then
-        RESPONSE=$(curl -s -L "http://$GATEWAY_IP:2050")
-	FAS_VALUE=$(echo "$RESPONSE" | grep -o 'name="fas" value="[^"]*"' | cut -d'"' -f4)
-	PORTAL_URL="http://$GATEWAY_IP:2050/opennds_preauth/?fas=${FAS_VALUE}&tos=accepted&voucher=$1"
+        RESPONSE=$(curl -s -L "http://$GATEWAY_IP:2050/login?")
+        FAS_VALUE=$(echo "$RESPONSE" | grep -o 'name="fas" value="[^"]*"' | cut -d'"' -f4)
+        PORTAL_URL="http://$GATEWAY_IP:2050/opennds_preauth/?fas=${FAS_VALUE}&tos=accepted&voucher=$1"
     else
         RESPONSE=$(curl -s -L "http://status.client:2050")
-	FAS_VALUE=$(echo "$RESPONSE" | grep -o 'name="fas" value="[^"]*"' | cut -d'"' -f4)
-	PORTAL_URL="http://status.client:2050/opennds_preauth/?fas=${FAS_VALUE}&tos=accepted&voucher=$1"
+        FAS_VALUE=$(echo "$RESPONSE" | grep -o 'name="fas" value="[^"]*"' | cut -d'"' -f4)
+        PORTAL_URL="http://status.client:2050/opennds_preauth/?fas=${FAS_VALUE}&tos=accepted&voucher=$1"
     fi
 
     if [ -z "$PORTAL_URL" ]; then
@@ -24,8 +24,8 @@ get_portal_params() {
         exit 1
     fi
 
-    # Extract the 'fas' parameter from hidden input field
-    FAS_PARAM=$(echo "$RESPONSE" | grep -oP 'name="fas" value="[^"]*"' | cut -d'"' -f4)
+    # Extract the 'fas' parameter from hidden input field - removed -P option
+    FAS_PARAM=$(echo "$RESPONSE" | grep -o 'name="fas" value="[^"]*"' | cut -d'"' -f4)
 
     if [ -z "$FAS_PARAM" ]; then
         echo "Failed to extract fas parameter"
@@ -60,8 +60,7 @@ echo "FAS Parameter extracted"
 
 # Submit the form using GET request
 echo "Submitting voucher code: $VOUCHER_CODE"
-ENCODED_URL="${PORTAL_URL}?fas=${FAS_PARAM}&tos=accepted&voucher=${VOUCHER_CODE}"
-curl -v "$ENCODED_URL"
+curl -v "$PORTAL_URL"
 
 # Wait a moment for the connection to establish
 sleep 5
