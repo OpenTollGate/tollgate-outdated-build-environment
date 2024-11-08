@@ -118,6 +118,9 @@ check_voucher() {
     echo "Voucher_roll: $voucher_roll" >> /tmp/theme_voucher_log.md
     output=$(grep $voucher $voucher_roll | head -n 1) # Store first occurence of voucher as variable
     #echo "$output <br>" #Matched line
+    # Read the LNURL from user_inputs.json
+    lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
+
     if [ $(echo -n "$voucher" | grep -ic "cashu") -ge 1 ]; then
 	# Compute checksum of voucher and store in variable
 	checksum=$(echo -n "$voucher" | sha256sum | cut -d' ' -f1)
@@ -125,8 +128,6 @@ check_voucher() {
 	# Use checksum in filename
 	ecash_file="/tmp/ecash_${checksum}.md"
 
-        # Read the LNURL from user_inputs.json
-        lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
 
 	# Only proceed if the file doesn't exist
 	if [ ! -f "$ecash_file" ]; then
