@@ -8,35 +8,29 @@ get_portal_params() {
     # Use curl with -L to follow redirects
     RESPONSE=$(curl -s -L http://status.client:2050)
     
-    # Extract the portal URL from the final redirect location
-    PORTAL_URL=$(echo "$RESPONSE" | grep -oP '(http|https)://[\w./?=-]*' | head -n 1)
+    # Extract the portal URL from an <form> action or <a href> tag
+    # It's important to find the appropriate place/construct to fetch the URL from
+    PORTAL_URL=$(echo "$RESPONSE" | grep -oP 'action="(/opennds_preauth/)".*' | sed -n 's/.*action="$[^"]*$".*/http:\/\/status.client\1/p')
     
     if [ -z "$PORTAL_URL" ]; then
         echo "Failed to extract portal URL. Response was: $RESPONSE"
         exit 1
     fi
 
-    # Extract base URL and fas parameter
-    BASE_URL=$(echo "$PORTAL_URL" | cut -d'?' -f1)
-    FAS_PARAM=$(echo "$PORTAL_URL" | grep -o "fas=.*" | cut -d'=' -f2)
-
-    # Get the form page to verify fas parameter
-    FORM_PAGE=$(curl -s "$PORTAL_URL")
+    # Extract the 'fas' parameter from hidden input field
+    FAS_PARAM=$(echo "$RESPONSE" | grep -oP 'name="fas" value="[^"]*"' | cut -d'"' -f4)
     
-    # Extract fas value from the form (as a backup/verification)
-    FORM_FAS=$(echo "$FORM_PAGE" | grep -o 'name="fas" value="[^"]*"' | cut -d'"' -f4)
-    
-    # Use form fas if available, otherwise use the one from URL
-    if [ ! -z "$FORM_FAS" ]; then
-        FAS_PARAM="$FORM_FAS"
+    if [ -z "$FAS_PARAM" ]; then
+        echo "Fas parameter extraction failed"
+        exit 1
     fi
-    
+
     # Export variables for use in main script
-    export PORTAL_URL="$BASE_URL"
-    export FAS_PARAM="$FAS_PARAM"
+    export PORTAL_URL
+    export FAS_PARAM
 }
 
-# Check if voucher code is provided
+# Check if a voucher code is provided
 if [ -z "$1" ]; then
     echo "Usage: $0 <voucher_code>"
     exit 1
@@ -63,7 +57,7 @@ ENCODED_URL="${PORTAL_URL}?fas=${FAS_PARAM}&tos=accepted&voucher=${VOUCHER_CODE}
 curl -v "$ENCODED_URL"
 
 # Wait a moment for the connection to establish
-sleep 2
+sleep 5
 
 # Test internet connectivity
 echo "Testing internet connectivity..."
