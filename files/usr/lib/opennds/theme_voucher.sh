@@ -175,7 +175,7 @@ check_voucher() {
 	    echo "E-cash note was already submitted, please wait for mint to respond. <br>"
 	fi
 
-    elif [ $(echo -n "$voucher" | grep -ic "lnurlw") -ge 1 ]; then
+    elif [ $(echo -n "$voucher" | grep -ic "lnurl") -ge 1 ]; then
 
 	# Compute checksum of voucher and store in variable
 	checksum=$(echo -n "$voucher" | sha256sum | cut -d' ' -f1)
