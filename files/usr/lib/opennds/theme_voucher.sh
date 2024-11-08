@@ -186,9 +186,14 @@ check_voucher() {
 
 	amount="1000"
 	response=$(/www/cgi-bin/./redeem_lnurlw.sh "$lnurlw_file" "$amount" "$lnurl")
-	# response=$(/www/cgi-bin/./redeem_lnurlw.sh "$voucher" "$lnurl")
-	# ./redeem_lnurlw.sh LNURL1DP68GURN8GHJ7ER9D4HJUMRWVF5HGUEWVDHK6TMHD96XSERJV9MJ7CTSDYHHVVF0D3H82UNV9U6XG3M5XA49SSJWFDH4VKRPVUMKKM3HXE3KVG0LXTP 8000
 	# {"status":"OK", "paid_amount":256000}
+
+	# Parse the JSON response and check if "status" is "OK"
+	status=$(echo "$response" | jq -r '.status')
+
+	if [ "$status" = "OK" ] && [ "$paid_amount" -gt 0 ]; then
+	    echo "lnurlw paid" > /tmp/lnurlwpaid.md
+	fi
 
 	echo "Voucher entered was ${voucher}. This looks like an lnurlw note that can be redeemed. <br>"
 	current_time=$(date +%s)
