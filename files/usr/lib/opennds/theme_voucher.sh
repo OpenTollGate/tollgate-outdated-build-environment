@@ -185,56 +185,34 @@ check_voucher() {
 
 	amount=1000
 	lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
-	echo "$amount" >> /tmp/lnurlwpaid.md
-	echo "$lnurlw_file" >> /tmp/lnurlwpaid.md
-	echo "$lnurl" >> /tmp/lnurlwpaid.md
+
 	response=$(/www/cgi-bin/./redeem_lnurlw.sh "$lnurlw_file" "$amount" "$lnurl")
 	# {"status":"OK", "paid_amount":256000}
-
-	# Parse the JSON response and check if "status" is "OK"
-	# status=$(echo "$response" | jq -r '.status')
-	# paid_amount=$(echo "$response" | jq -r '.paid_amount')
-	
-	# echo "$response" | jq -r '.status'
-	# echo "$response" | jq -r '.paid_amount'
-	# echo "$status" >> /tmp/lnurlwpaid.md
-	# echo "$paid_amount" >> /tmp/lnurlwpaid.md
-	echo "$response" >> /tmp/lnurlwpaid.md
-
-	#if [ "$status" = "OK" ] && [ "$paid_amount" -gt 0 ]; then
-	#    echo "lnurlw paid" > /tmp/lnurlwpaid.md
-	#fi
+	# echo "$response" >> /tmp/lnurlwpaid.md
 
 	if [[ -n "$response" ]]; then
 	    status=$(echo "$response" | jq -r '.status' 2>/dev/null)
-	    paid_amount=$(echo "$response" | jq -r '.paid_amount' 2>/dev/null)
 
 	    if [[ "$status" == "OK" && -n "$paid_amount" ]]; then
 	        echo "$status" >> /tmp/lnurlwpaid.md
-	        echo "$paid_amount" >> /tmp/lnurlwpaid.md
+                current_time=$(date +%s)
+		upload_rate=0
+		download_rate=0
+		upload_quota=0
+		download_quota=0
+                session_length=$amount
+
+                # Log the new temporary voucher
+		echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
+                return 0
 	    else
 	        echo "Error parsing JSON or invalid response" >> /tmp/lnurlwpaid.md
+                return 1
 	    fi
 	else
 	    echo "Empty response from redeem_lnurlw.sh" >> /tmp/lnurlwpaid.md
+            return 1
 	fi
-
-	echo "Voucher entered was ${voucher}. This looks like an lnurlw note that can be redeemed. <br>"
-	current_time=$(date +%s)
-	upload_rate=512    # Different rates for lnurlw, if needed
-	download_rate=512  # Different rates for lnurlw, if needed
-	upload_quota=10240
-	download_quota=10240
-	session_length=10  # Different session length for lnurlw
-
-	voucher_time_limit=$session_length
-
-	# Log the voucher
-	voucher_expiration=$(($current_time + $voucher_time_limit))
-	session_length=$voucher_time_limit
-	echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
-
-	return 0
     else
 	echo "No Voucher Found - Retry <br>"
 	return 1
