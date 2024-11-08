@@ -118,6 +118,8 @@ check_voucher() {
     echo "Voucher_roll: $voucher_roll" >> /tmp/theme_voucher_log.md
     output=$(grep $voucher $voucher_roll | head -n 1) # Store first occurence of voucher as variable
     #echo "$output <br>" #Matched line
+    # Read the LNURL from user_inputs.json
+
     if [ $(echo -n "$voucher" | grep -ic "cashu") -ge 1 ]; then
 	# Compute checksum of voucher and store in variable
 	checksum=$(echo -n "$voucher" | sha256sum | cut -d' ' -f1)
@@ -125,8 +127,6 @@ check_voucher() {
 	# Use checksum in filename
 	ecash_file="/tmp/ecash_${checksum}.md"
 
-        # Read the LNURL from user_inputs.json
-        lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
 
 	# Only proceed if the file doesn't exist
 	if [ ! -f "$ecash_file" ]; then
@@ -135,6 +135,7 @@ check_voucher() {
 	    echo "<p>The e-cash is being processed. Please wait...</p>"
 
             # Make the curl request using the LNURL from user_inputs.json
+	    lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
             response=$(/www/cgi-bin/./curl_request.sh "$ecash_file" "$lnurl")
 
 	    # Parse the JSON response and check if "paid" is true
@@ -150,8 +151,6 @@ check_voucher() {
 		    upload_quota=0
 		    download_quota=0
                     session_length=$total_amount
-		    voucher_time_limit=$session_length
-                    voucher_expiration=$((current_time + voucher_time_limit))
 
                     # Log the new temporary voucher
 		    echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
@@ -175,7 +174,7 @@ check_voucher() {
 	    echo "E-cash note was already submitted, please wait for mint to respond. <br>"
 	fi
 
-    elif [ $(echo -n "$voucher" | grep -ic "lnurlw") -ge 1 ]; then
+    elif [ $(echo -n "$voucher" | grep -ic "lnurl") -ge 1 ]; then
 
 	# Compute checksum of voucher and store in variable
 	checksum=$(echo -n "$voucher" | sha256sum | cut -d' ' -f1)
@@ -183,27 +182,37 @@ check_voucher() {
 	# Use checksum in filename
 	lnurlw_file="/tmp/lnurl_${clientmac}_${checksum}.md"
         echo "$voucher" > "$lnurlw_file"
-	
-	# response=$(/www/cgi-bin/./redeem_lnurlw.sh "$voucher" "$lnurl")
-	# ./redeem_lnurlw.sh LNURL1DP68GURN8GHJ7ER9D4HJUMRWVF5HGUEWVDHK6TMHD96XSERJV9MJ7CTSDYHHVVF0D3H82UNV9U6XG3M5XA49SSJWFDH4VKRPVUMKKM3HXE3KVG0LXTP 8000
+
+	amount=1000
+	lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
+
+	response=$(/www/cgi-bin/./redeem_lnurlw.sh "$lnurlw_file" "$amount" "$lnurl")
 	# {"status":"OK", "paid_amount":256000}
+	# echo "$response" >> /tmp/lnurlwpaid.md
 
-	echo "Voucher entered was ${voucher}. This looks like an lnurlw note that can be redeemed. <br>"
-	current_time=$(date +%s)
-	upload_rate=512    # Different rates for lnurlw, if needed
-	download_rate=512  # Different rates for lnurlw, if needed
-	upload_quota=10240
-	download_quota=10240
-	session_length=10  # Different session length for lnurlw
+	if [[ -n "$response" ]]; then
+	    status=$(echo "$response" | jq -r '.status' 2>/dev/null)
 
-	voucher_time_limit=$session_length
+	    if [[ "$status" == "OK" && -n "$paid_amount" ]]; then
+	        echo "$status" >> /tmp/lnurlwpaid.md
+                current_time=$(date +%s)
+		upload_rate=0
+		download_rate=0
+		upload_quota=0
+		download_quota=0
+                session_length=$amount
 
-	# Log the voucher
-	voucher_expiration=$(($current_time + $voucher_time_limit))
-	session_length=$voucher_time_limit
-	echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
-
-	return 0
+                # Log the new temporary voucher
+		echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
+                return 0
+	    else
+	        echo "Error parsing JSON or invalid response" >> /tmp/lnurlwpaid.md
+                return 1
+	    fi
+	else
+	    echo "Empty response from redeem_lnurlw.sh" >> /tmp/lnurlwpaid.md
+            return 1
+	fi
     else
 	echo "No Voucher Found - Retry <br>"
 	return 1
