@@ -188,10 +188,14 @@ check_voucher() {
 
 	# Parse the JSON response and check if "status" is "OK"
 	status=$(echo "$response" | jq -r '.status')
-
+	paid_amount=$(echo "$response" | jq -r '.paid_amount')
+	
+	echo "$status" >> /tmp/lnurlwpaid.md
+	echo "$paid_amount" >> /tmp/lnurlwpaid.md
+	
 	if [ "$status" = "OK" ] && [ "$paid_amount" -gt 0 ]; then
             echo "Voucher entered was ${voucher}. This looks like an lnurlw note that was redeemed successfully. <br>"
-	    echo "lnurlw paid" > /tmp/lnurlwpaid.md
+	    echo "lnurlw paid" >> /tmp/lnurlwpaid.md
 	fi
 
         current_time=$(date +%s)
