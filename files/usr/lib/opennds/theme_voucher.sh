@@ -201,7 +201,7 @@ check_voucher() {
 		download_rate=0
 		upload_quota=0
 		download_quota=0
-		session_length=($amount / 1000)
+		session_length=$amount / 1000
 
 		# Log the new temporary voucher
 		echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
