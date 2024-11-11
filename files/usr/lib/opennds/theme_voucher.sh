@@ -194,7 +194,8 @@ check_voucher() {
 	    status=$(echo "$response" | jq -r '.status' 2>/dev/null)
             paid_amount=$(echo "$response" | jq -r '.paid_amount' 2>/dev/null)
 
-	    minutes=$amount / 1000
+	    minutes=$(($amount/1000))
+	    # echo "minutes: $minutes" >> /tmp/lnurlwpaid.md
 
 	    if [[ "$status" == "OK" && -n "$paid_amount" ]]; then
 		# echo "$status" >> /tmp/lnurlwpaid.md
