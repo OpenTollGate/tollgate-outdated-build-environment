@@ -194,6 +194,8 @@ check_voucher() {
 	    status=$(echo "$response" | jq -r '.status' 2>/dev/null)
             paid_amount=$(echo "$response" | jq -r '.paid_amount' 2>/dev/null)
 
+	    minutes=$amount / 1000
+
 	    if [[ "$status" == "OK" && -n "$paid_amount" ]]; then
 		# echo "$status" >> /tmp/lnurlwpaid.md
 		current_time=$(date +%s)
@@ -201,7 +203,7 @@ check_voucher() {
 		download_rate=0
 		upload_quota=0
 		download_quota=0
-		session_length=$amount / 1000
+		session_length=$minutes
 
 		# Log the new temporary voucher
 		echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
