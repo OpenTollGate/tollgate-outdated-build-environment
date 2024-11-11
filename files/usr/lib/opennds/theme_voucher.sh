@@ -195,7 +195,7 @@ check_voucher() {
             paid_amount=$(echo "$response" | jq -r '.paid_amount' 2>/dev/null)
 
 	    if [[ "$status" == "OK" && -n "$paid_amount" ]]; then
-		echo "$status" >> /tmp/lnurlwpaid.md
+		# echo "$status" >> /tmp/lnurlwpaid.md
 		current_time=$(date +%s)
 		upload_rate=0
 		download_rate=0
