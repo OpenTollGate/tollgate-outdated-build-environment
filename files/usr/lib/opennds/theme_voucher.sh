@@ -192,29 +192,34 @@ check_voucher() {
 
 	if [[ -n "$response" ]]; then
 	    status=$(echo "$response" | jq -r '.status' 2>/dev/null)
+            paid_amount=$(echo "$response" | jq -r '.paid_amount' 2>/dev/null)
+
+	    minutes=$(($amount/1000))
+	    # echo "minutes: $minutes" >> /tmp/lnurlwpaid.md
 
 	    if [[ "$status" == "OK" && -n "$paid_amount" ]]; then
-	        echo "$status" >> /tmp/lnurlwpaid.md
-                current_time=$(date +%s)
+		# echo "$status" >> /tmp/lnurlwpaid.md
+		current_time=$(date +%s)
 		upload_rate=0
 		download_rate=0
 		upload_quota=0
 		download_quota=0
-                session_length=$amount
+		session_length=$minutes
 
-                # Log the new temporary voucher
+		# Log the new temporary voucher
 		echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
-                return 0
-	    else
-	        echo "Error parsing JSON or invalid response" >> /tmp/lnurlwpaid.md
-                return 1
+		return 0
+            else
+		echo "Error parsing JSON or invalid response" >> /tmp/lnurlwpaid.md
+		return 1
 	    fi
 	else
-	    echo "Empty response from redeem_lnurlw.sh" >> /tmp/lnurlwpaid.md
-            return 1
+	    echo "Empty response from redeem_lnurlw.sh - Retry <br>"
+            echo "Empty response from redeem_lnurlw.sh" >> /tmp/lnurlwpaid.md
+	    return 1
 	fi
     else
-	echo "No Voucher Found - Retry <br>"
+	echo "No input - Retry <br>"
 	return 1
     fi
     

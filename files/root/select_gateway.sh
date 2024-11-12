@@ -31,9 +31,11 @@ if [ -z "$NEW_SSID" ] || [ -z "$ENCRYPTION_TYPE" ]; then
     exit 1
 fi
 
-# Prompt the user for the password
-echo "Enter the password for SSID '$NEW_SSID':"
-read -s NEW_PASSWORD
+# Only prompt for password if not a TollGate network
+if ! echo "$NEW_SSID" | grep -q "^TollGate_"; then
+    echo "Enter the password for SSID '$NEW_SSID':"
+    read -s NEW_PASSWORD
+fi
 
 get_wifi_interface() {
     # This will get the first managed mode interface
@@ -62,24 +64,33 @@ uci set wireless.wifinet1.mode='sta'
 uci set wireless.wifinet1.network='wwan'
 uci set wireless.wifinet1.ssid=''"$NEW_SSID"''
 
-# Set encryption based on the parsed type
-case "$ENCRYPTION_TYPE" in
-    sae)
-        uci set wireless.wifinet1.encryption='sae'
-        ;;
-    wpa2 | psk2)
-        uci set wireless.wifinet1.encryption='psk2'
-        ;;
-    none)
-        uci set wireless.wifinet1.encryption='none'
-        ;;
-    *)
-        echo "Unknown encryption type '$ENCRYPTION_TYPE'. Using 'psk-mixed' as fallback."
-        uci set wireless.wifinet1.encryption='psk-mixed'
-        ;;
-esac
+# Check if this is a TollGate network
+if echo "$NEW_SSID" | grep -q "^TollGate_"; then
+    # Force encryption to none for TollGate networks
+    uci set wireless.wifinet1.encryption='none'
+else
+    # Set encryption based on the parsed type for non-TollGate networks
+    case "$ENCRYPTION_TYPE" in
+        sae)
+            uci set wireless.wifinet1.encryption='sae'
+            ;;
+        wpa2 | psk2)
+            uci set wireless.wifinet1.encryption='psk2'
+            ;;
+        none)
+            uci set wireless.wifinet1.encryption='none'
+            ;;
+        *)
+            echo "Unknown encryption type '$ENCRYPTION_TYPE'. Using 'psk-mixed' as fallback."
+            uci set wireless.wifinet1.encryption='psk-mixed'
+            ;;
+    esac
 
-uci set wireless.wifinet1.key="$NEW_PASSWORD"
+    # Only set password for non-TollGate networks
+    if [ -n "$NEW_PASSWORD" ]; then
+        uci set wireless.wifinet1.key="$NEW_PASSWORD"
+    fi
+fi
 
 # Commit the changes
 uci commit firewall
