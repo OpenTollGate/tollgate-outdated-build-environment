@@ -112,6 +112,31 @@ if [ $? -eq 0 ]; then
 
     echo "New PASSWORD: $MASKED_PASSWORD"
     echo "Detected Encryption: $ENCRYPTION_TYPE"
+
+    # If this is a TollGate network, wait for connection and update /etc/hosts
+    if echo "$NEW_SSID" | grep -q "^TollGate_"; then
+        echo "TollGate network detected. Waiting for connection..."
+        
+        # Wait for network interface to be up (max 30 seconds)
+        for i in $(seq 1 30); do
+            if ip route | grep -q default; then
+                # Get the gateway IP
+                GATEWAY_IP=$(ip route | grep default | awk '{print $3}')
+                if [ -n "$GATEWAY_IP" ]; then
+                    echo "Gateway IP detected: $GATEWAY_IP"
+                    
+                    # Update /etc/hosts - remove existing status.client entry if it exists
+                    sed -i '/status.client/d' /etc/hosts
+                    
+                    # Add new entry
+                    echo "$GATEWAY_IP status.client" >> /etc/hosts
+                    echo "Updated /etc/hosts with gateway IP mapping"
+                    break
+                fi
+            fi
+            sleep 1
+        done
+    fi
 else
     echo "Error: Failed to update the wireless configuration."
     exit 1

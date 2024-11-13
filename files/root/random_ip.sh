@@ -18,6 +18,7 @@ if [ ! -f "$FIRST_BOOT_FLAG" ]; then
     uci commit network
     
     # Update OpenNDS config
+    # Modified this line to correctly set statuspath
     uci set opennds.@opennds[0].statuspath="$RANDOM_IP"
     uci commit opennds
     
