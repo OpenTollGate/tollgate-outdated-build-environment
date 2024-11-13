@@ -83,8 +83,8 @@ fi
 
 scan_until_success() {
     local output
-    local retries=10
-    local delay=2
+    local retries=15
+    local delay=3
 
     for i in $(seq 1 $retries); do
         output=$(scan_wifi_networks_to_json)
