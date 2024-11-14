@@ -126,10 +126,10 @@ if [ $? -eq 0 ]; then
                     echo "Gateway IP detected: $GATEWAY_IP"
                     
                     # Update /etc/hosts - remove existing status.client entry if it exists
-                    sed -i '/status.client/d' /etc/hosts
+                    sed -i '/status.upstream/d' /etc/hosts
                     
                     # Add new entry
-                    echo "$GATEWAY_IP status.client" >> /etc/hosts
+                    echo "$GATEWAY_IP status.upstream" >> /etc/hosts
                     echo "Updated /etc/hosts with gateway IP mapping"
                     break
                 fi

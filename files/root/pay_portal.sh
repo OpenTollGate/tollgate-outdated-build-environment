@@ -9,9 +9,9 @@ get_portal_params() {
     STA_IP=$(ip addr show phy0-sta0 | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)
     GATEWAY_IP=$(echo "$STA_IP" | sed 's/\.[0-9]*$/.1/')
 
-    RESPONSE=$(curl -s -L "http://status.client:2050")
+    RESPONSE=$(curl -s -L "http://status.upstream:2050")
     FAS_VALUE=$(echo "$RESPONSE" | grep -o 'name="fas" value="[^"]*"' | cut -d'"' -f4)
-    PORTAL_URL="http://status.client:2050/opennds_preauth/?fas=${FAS_VALUE}&tos=accepted&voucher=$1"
+    PORTAL_URL="http://status.upstream:2050/opennds_preauth/?fas=${FAS_VALUE}&tos=accepted&voucher=$1"
 
     if [ -z "$PORTAL_URL" ]; then
         echo "Failed to extract portal URL. Response was: $RESPONSE"

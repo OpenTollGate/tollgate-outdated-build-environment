@@ -74,9 +74,7 @@ cat << "EOF" | sh
             if [ "$network_available" = true ] && [ "$opends_responsive" = true ]; then
                 if [ "$current_status" != "0" ]; then
                     log_action "Internet and OpenNDS are available. Turning on WiFi."
-                    uci set wireless.default_radio0.disabled=0
-                    uci commit wireless
-                    wifi  up
+		    /root/./turn_on_accesspoint.sh
                 else
                     log_action "WiFi hotspot is already on and Internet and OpenNDS are available."
                 fi
