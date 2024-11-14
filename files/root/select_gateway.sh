@@ -5,6 +5,13 @@ select_network() {
     ./sort_wifi_networks.sh --select-ssid
 }
 
+# Function to check internet connectivity
+check_internet() {
+    # Try to ping a reliable host (Google DNS)
+    ping -c 3 8.8.8.8 > /dev/null 2>&1
+    return $?
+}
+
 # Run the network selection script and check if it succeeded
 select_network
 
@@ -52,7 +59,7 @@ uci set network.wwan.proto='dhcp'
 # Update wireless configuration
 uci set wireless.radio0.disabled='0'
 uci set wireless.radio0.cell_density='0'
-uci set wireless.default_radio0.disabled='1'
+# uci set wireless.default_radio0.disabled='1'  # Initially disable AP
 
 # Remove existing wifinet1 configuration if it exists
 uci delete wireless.wifinet1
@@ -113,30 +120,40 @@ if [ $? -eq 0 ]; then
     echo "New PASSWORD: $MASKED_PASSWORD"
     echo "Detected Encryption: $ENCRYPTION_TYPE"
 
-    # If this is a TollGate network, wait for connection and update /etc/hosts
-    if echo "$NEW_SSID" | grep -q "^TollGate_"; then
-        echo "TollGate network detected. Waiting for connection..."
-        
-        # Wait for network interface to be up (max 30 seconds)
-        for i in $(seq 1 30); do
-            if ip route | grep -q default; then
-                # Get the gateway IP
-                GATEWAY_IP=$(ip route | grep default | awk '{print $3}')
-                if [ -n "$GATEWAY_IP" ]; then
-                    echo "Gateway IP detected: $GATEWAY_IP"
-                    
+    # Wait for network to stabilize
+    echo "Waiting for network connection (30 seconds max)..."
+    for i in $(seq 1 30); do
+        if ip route | grep -q default; then
+            # Get the gateway IP
+            GATEWAY_IP=$(ip route | grep default | awk '{print $3}')
+            if [ -n "$GATEWAY_IP" ]; then
+                echo "Gateway IP detected: $GATEWAY_IP"
+                
+                # Check internet connectivity
+                if check_internet; then
+                    echo "Internet connectivity confirmed. Enabling AP..."
+                    # Enable the AP
+                    uci set wireless.default_radio0.disabled='0'
+                    uci commit wireless
+                    wifi reload
+                    echo "Access Point has been enabled."
+                else
+                    echo "No internet connectivity detected. AP remains disabled."
+                fi
+
+                # If this is a TollGate network, update /etc/hosts
+                if echo "$NEW_SSID" | grep -q "^TollGate_"; then
                     # Update /etc/hosts - remove existing status.client entry if it exists
                     sed -i '/status.client/d' /etc/hosts
-                    
                     # Add new entry
                     echo "$GATEWAY_IP status.client" >> /etc/hosts
                     echo "Updated /etc/hosts with gateway IP mapping"
-                    break
                 fi
+                break
             fi
-            sleep 1
-        done
-    fi
+        fi
+        sleep 1
+    done
 else
     echo "Error: Failed to update the wireless configuration."
     exit 1
