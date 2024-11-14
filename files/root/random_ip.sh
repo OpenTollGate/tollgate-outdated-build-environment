@@ -19,8 +19,8 @@ if [ ! -f "$FIRST_BOOT_FLAG" ]; then
     
     # Update OpenNDS config
     # Modified this line to correctly set statuspath
-    uci set opennds.@opennds[0].statuspath="$RANDOM_IP"
-    uci commit opennds
+    # uci set opennds.@opennds[0].statuspath="$RANDOM_IP"
+    # uci commit opennds
     
     # Update hosts file
     # First, remove old status.client entry if it exists
