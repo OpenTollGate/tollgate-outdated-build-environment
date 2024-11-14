@@ -2,6 +2,8 @@ config opennds
     option login_option_enabled '3'
     option themespec_path '/usr/lib/opennds/theme_voucher.sh'
     option statuspath '/opennds_status/'
+    option gatewayname 'status.tollgate_ssid'
+    option gatewayurl 'http://status.tollgate_ssid'
     option allow_preemptive_authentication '0'
     option allowlocal '1'
     option auth_mode 'normal'

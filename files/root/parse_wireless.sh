@@ -1,42 +1,36 @@
 #!/bin/sh
 
-# Function to extract SSIDs and interface names
-parse_wireless_config() {
-    # Create a temporary file for building the JSON
-    local temp_file="/tmp/wifi_map.json"
-    echo "{" > "$temp_file"
-    
-    local first_entry=1
-    
-    # Process each wifi-iface section
-    while IFS= read -r line; do
-        if echo "$line" | grep -q "^config wifi-iface '"; then
-            # Extract interface name
-            iface=$(echo "$line" | sed "s/config wifi-iface '$.*$'/\1/")
-            # Get the SSID for this interface
-            ssid=$(sed -n "/^config wifi-iface '$iface'/,/^config\|$/p" /etc/config/wireless | \
-                  grep "option ssid" | \
-                  sed "s/.*option ssid '$.*$'/\1/")
-            
-            # Add comma if not first entry
-            if [ "$first_entry" -eq 0 ]; then
-                echo "," >> "$temp_file"
-            fi
-            first_entry=0
-            
-            # Add entry to JSON
-            echo "    \"$iface\": \"$ssid\"" >> "$temp_file"
-        fi
-    done < /etc/config/wireless
-    
-    echo "}" >> "$temp_file"
-    
-    # Move temp file to final location
-    mv "$temp_file" "/tmp/wifi_interfaces.json"
-}
+# Create a temporary file for collecting the data
+temp_file=$(mktemp)
 
-# Execute the function
-parse_wireless_config
+# Initialize empty JSON object
+echo "{}" > "$temp_file"
 
-# Optional: Display the result
+# Process wireless config and build JSON using jq
+while IFS= read -r line; do
+    if echo "$line" | grep -q "^config wifi-iface"; then
+        # Extract interface name
+        iface=$(echo "$line" | grep -o "'.*'" | tr -d "'")
+        
+        # Get SSID for this interface
+        ssid=$(sed -n "/^config wifi-iface '$iface'/,/^config\|$/p" /etc/config/wireless | \
+              grep "option ssid" | \
+              grep -o "'.*'" | \
+              tr -d "'")
+        
+        # Add to JSON using jq
+        cat "$temp_file" | \
+        jq --arg iface "$iface" --arg ssid "$ssid" \
+        '. + {($iface): $ssid}' > "$temp_file.new" && \
+        mv "$temp_file.new" "$temp_file"
+    fi
+done < /etc/config/wireless
+
+# Format final JSON and save to destination
+cat "$temp_file" | jq '.' > "/tmp/wifi_interfaces.json"
+
+# Clean up
+rm "$temp_file"
+
+# Display the result
 cat /tmp/wifi_interfaces.json
