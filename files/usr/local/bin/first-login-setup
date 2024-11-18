@@ -175,21 +175,35 @@ prompt_user_and_wait_for_dhcp() {
 setup_wifi() {
     # WiFi setup loop
     while true; do
-        # Prompt for WiFi credentials
-        # echo "Enter WiFi gateway SSID:"
-        # read ssid
-        # update_json "wifi_ssid" "$ssid"
-
-        # echo "Enter WiFi gateway Password:"
-        # read -s password
-        # update_json "wifi_password" "$password"
-
         echo "Restarting network..."
         /etc/init.d/network restart
-
-        # Update WiFi configuration
-        /root/./select_gateway.sh # "$ssid" "$password"
         
+        # Run select_gateway.sh to get SSID
+        /root/./select_gateway.sh
+        
+        # Read the selected SSID from the temp file
+        ssid=$(jq -r '.ssid' /tmp/selected_ssid.md)
+
+        # Check if SSID starts with TollGate_
+        if echo "$ssid" | grep -q "^TollGate_"; then
+            echo "TollGate network detected. Please enter your LNURLw or e-cash string:"
+            read lnurlw_ecash
+            update_json "lnurlw_ecash" "$lnurlw_ecash"
+            # For TollGate networks, we don't want VPN
+            update_json "vpn_setup" "false"
+            
+            # Attempt to pay for internet access
+            echo "Attempting to pay for internet access..."
+            if ! /root/./pay_portal.sh "$lnurlw_ecash"; then
+                echo "Payment failed. Please try again with a different LNURLw or e-cash string."
+                continue
+            fi
+            echo "Payment successful!"
+        else
+            # For non-TollGate networks, enable VPN
+            update_json "vpn_setup" "true"
+        fi
+
         # Wait for network to be ready
         echo "Waiting for network to be ready..."
         if wait_for_network; then
@@ -201,13 +215,19 @@ setup_wifi() {
                     opkg update && opkg install coreutils-base64 &
                 fi
 
-           	/www/cgi-bin/./generate_keys.sh
-		/root/./fix_ssid.sh
+                /www/cgi-bin/./generate_keys.sh
+                /root/./fix_ssid.sh
 
                 # Update JSON with WiFi details
                 update_json "wifi_ssid" "$ssid"
                 update_json "wifi_setup" "true"
                 update_json "wifi_connected" "true"
+                
+                # Setup VPN based on earlier decision
+                if [ "$(jq -r '.vpn_setup' /root/user_inputs.json)" = "true" ]; then
+                    setup_vpn
+                fi
+                
                 break
             else
                 echo "Failed to connect. Please try again."
@@ -264,25 +284,10 @@ if [ ! -f /etc/first_login_done ]; then
         read operator_npub
         update_json "operator_npub" "$operator_npub"
 
-        # Ask user whether they want to set up a VPN
-        echo "Do you want to set up a VPN? (yes/no):"
-        read setup_vpn_answer
-        if [ "$setup_vpn_answer" = "yes" ]; then
-            setup_vpn
-            update_json "vpn_setup" "true"
-        else
-            update_json "vpn_setup" "false"
-        fi
-
         # Setup WiFi
         setup_wifi
         if verify_wifi_connection; then
-            # setup_opennds # If VPN setup is enabled and we need this step
-
-            # echo "Repeating opennds setup to get a DHCP lease..."
-            # setup_opennds # Uncomment if we need to repeat the opennds setup
-	    
-    	    touch /etc/first_login_done
+            touch /etc/first_login_done
             handle_dhcp_lease
         else
             update_json "setup_failed" "true"
