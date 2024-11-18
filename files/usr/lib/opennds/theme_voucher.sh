@@ -138,6 +138,8 @@ check_voucher() {
 	    lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
             response=$(/www/cgi-bin/./curl_request.sh "$ecash_file" "$lnurl")
 
+	    echo "$response" >> /tmp/lnurlwpaid.md
+
 	    # Parse the JSON response and check if "paid" is true
 	    paid=$(echo "$response" | jq -r '.paid')
 	    if [ "$paid" = "true" ]; then
