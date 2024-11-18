@@ -15,7 +15,6 @@ get_hotspot_ssid() {
     echo "TollGate_${mac_address}"
 }
 
-
 hotspot_ssid=$(get_hotspot_ssid)
 
 uci set wireless.default_radio0.ssid="$hotspot_ssid"
@@ -23,3 +22,4 @@ uci set system.@system[0].hostname="$hotspot_ssid"
 uci commit system
 uci commit wireless
 /etc/init.d/system reload
+/sbin/wifi reload
