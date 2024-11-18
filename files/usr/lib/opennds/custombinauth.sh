@@ -16,12 +16,21 @@ log_message() {
     echo "$timestamp: $1" >> /tmp/custombinauth.log
 }
 
+# Set the action variable from the first parameter
+action="$1"
+
 log_message "=== New Authentication Request ==="
 log_message "Action: $action"
+log_message "MAC: $2"
+log_message "Token: $3"
+log_message "Incoming: $4"
+log_message "Outgoing: $5"
+log_message "Client IP: $6"
+log_message "Custom Data: $7"
 
 seconds_per_sat=60
 
-if [ $action = "auth_client" ]; then
+if [ "$action" = "ndsctl_auth" ]; then
     # Log raw custom data
     log_message "Raw custom data: $7"
     
@@ -36,7 +45,7 @@ if [ $action = "auth_client" ]; then
     
     if [ -n "$amount" ]; then
         # Convert amount (sats) to minutes, then to seconds
-        session_length=$((amount *  seconds_per_sat))
+        session_length=$((amount * seconds_per_sat))
         log_message "Amount paid: $amount sats"
         log_message "Session length: $session_length seconds (${amount} minutes)"
         
@@ -64,6 +73,24 @@ if [ $action = "auth_client" ]; then
     log_message "- Upload quota: $upload_quota kB"
     log_message "- Download quota: $download_quota kB"
     log_message "- Exit level: $exitlevel"
+
+    # Update prices and log the output
+    log_message "Running set_prices.sh..."
+    # set_prices_output=$(/root/set_prices.sh 2>&1)
+    # log_message "set_prices.sh output: $set_prices_output"
+    log_message "Updated prices after new client authentication"
+fi
+
+if [ "$action" = "ndsctl_deauth" ]; then
+    log_message "Client deauthenticated"
+    # Set response for deauth
+    exitlevel=0
+    
+    # Update prices and log the output
+    log_message "Running set_prices.sh..."
+    # set_prices_output=$(/root/set_prices.sh 2>&1)
+    # log_message "set_prices.sh output: $set_prices_output"
+    log_message "Updated prices after client deauthentication"
 fi
 
 log_message "=== End of Authentication Request ==="

@@ -1,6 +1,7 @@
 config opennds
     option login_option_enabled '3'
     option themespec_path '/usr/lib/opennds/theme_voucher.sh'
+    option binauth '/usr/lib/opennds/custombinauth.sh'
     option statuspath '/opennds_status/'
     option allow_preemptive_authentication '0'
     option allowlocal '1'
@@ -8,4 +9,6 @@ config opennds
     option enabled '1'
     option faskey '55a63ea290a811d9041e15bde2bf80b356f3fb0e449fbf61f5206339428c856a'
     option debuglevel '3'
-
+    option binauth_support '1'
+    option binauth_session '1'
+    option binauth_log '1'
