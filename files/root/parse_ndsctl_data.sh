@@ -142,3 +142,5 @@ jq -r --arg current_time "$CURRENT_TIME" '
     )
     | "Session: \(.token) - Inactive for: \(($current_time | tonumber) - (.last_active | tonumber)) seconds"
 ' "$JSON_FILE"
+
+# ndsctl auth [mac address] 1440 0 0 1000000 1000000 na
