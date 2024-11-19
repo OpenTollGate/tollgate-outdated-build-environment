@@ -53,8 +53,8 @@ get_client_details() {
         | .value
         | . as $client
         | (
-            if (.session_end != "null" and .session_start != "null") then
-                ((.session_end | tonumber) - (.session_start | tonumber))
+            if (.session_end != "null") then
+                ((.session_end | tonumber) - ($current_time | tonumber))
             else
                 0
             end
@@ -90,10 +90,9 @@ get_client_details() {
                 0
             end
         ) as $remaining_data
-        | "Client MAC: \(.mac)\n" +
-          "  State: \(.state)\n" +
-          "  Total Data Usage: \($total_data_usage) bytes\n" +
-          "  Remaining Data: \($remaining_data) bytes\n" +
+        | "  State: \(.state)\n" +
+          "  Total Data Usage: \($total_data_usage) kB\n" +
+          "  Remaining Data: \($remaining_data) kB\n" +
           "  Remaining Session Time: \($remaining_session_time) seconds\n" +
           "  Time Since Last Active: \($time_since_last_active) seconds\n" +
           "  Session: \(.token)\n" +
@@ -104,8 +103,8 @@ get_client_details() {
 # Print summary
 echo "=== Network Usage Summary ==="
 echo "Authorized Clients: $(get_authorized_clients)"
-echo "Total Downloads: $(get_total_downloads) bytes"
-echo "Total Uploads: $(get_total_uploads) bytes"
+echo "Total Downloads: $(get_total_downloads) kB"
+echo "Total Uploads: $(get_total_uploads) kB"
 echo ""
 echo "=== Detailed Client Information ==="
 get_client_details
@@ -117,9 +116,9 @@ jq -r --arg current_time "$CURRENT_TIME" '
     .clients[]
     | select(
         (.download_quota != "null" and .download_this_session != "null" and .upload_this_session != "null") and
-        ((.download_quota | tonumber) - ((.download_this_session | tonumber) + (.upload_this_session | tonumber))) < 268435456
+        ((.download_quota | tonumber) - ((.download_this_session | tonumber) + (.upload_this_session | tonumber))) < 262144
     )
-    | "MAC: \(.mac) - Remaining Data: \((.download_quota | tonumber) - ((.download_this_session | tonumber) + (.upload_this_session | tonumber))) bytes"
+    | "Session: \(.token) - Remaining Data: \((.download_quota | tonumber) - ((.download_this_session | tonumber) + (.upload_this_session | tonumber))) kB"
 ' "$JSON_FILE"
 
 # Get clients inactive for more than 1 hour (3600 seconds)
@@ -130,7 +129,7 @@ jq -r --arg current_time "$CURRENT_TIME" '
         (.last_active != "null") and
         (($current_time | tonumber) - (.last_active | tonumber)) > 3600
     )
-    | "MAC: \(.mac) - Inactive for: \(($current_time | tonumber) - (.last_active | tonumber)) seconds"
+    | "Session: \(.token) - Inactive for: \(($current_time | tonumber) - (.last_active | tonumber)) seconds"
 ' "$JSON_FILE"
 
 # Get clients active for less than 5 minutes (300 seconds)
@@ -141,5 +140,5 @@ jq -r --arg current_time "$CURRENT_TIME" '
         (.last_active != "null") and
         (($current_time | tonumber) - (.last_active | tonumber)) < 300
     )
-    | "MAC: \(.mac) - Inactive for: \(($current_time | tonumber) - (.last_active | tonumber)) seconds"
+    | "Session: \(.token) - Inactive for: \(($current_time | tonumber) - (.last_active | tonumber)) seconds"
 ' "$JSON_FILE"
