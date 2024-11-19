@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Define JSON file path
-JSON_FILE="/root/user_inputs.json"
+JSON_FILE="/tmp/pricing_inputs.json"
 
 # Debug function
 debug_json() {
