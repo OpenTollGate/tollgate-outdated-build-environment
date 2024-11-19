@@ -85,16 +85,12 @@ get_client_details() {
         ) as $total_data_usage
         | "Client MAC: \(.mac)\n" +
           "  State: \(.state)\n" +
-          "  IP: \(.ip)\n" +
-          "  Download: \(.download_this_session) bytes\n" +
-          "  Upload: \(.upload_this_session) bytes\n" +
           "  Total Data Usage: \($total_data_usage) bytes\n" +
           "  Remaining Session Time: \($remaining_session_time) seconds\n" +
           "  Time Since Last Active: \($time_since_last_active) seconds\n" +
           "  Remaining Download Quota: \($remaining_download_quota) bytes\n" +
           "  Remaining Upload Quota: \($remaining_upload_quota) bytes\n" +
-          "  Last Active: \(.last_active)\n" +
-          "  Token: \(.token)\n" +
+          "  Session: \(.token)\n" +
           "----------------------------------------"
     ' "$JSON_FILE"
 }
@@ -108,14 +104,15 @@ echo ""
 echo "=== Detailed Client Information ==="
 get_client_details
 
+
 # Additional calculations if needed
 # Get clients with low remaining quota (less than 1MB)
-echo "=== Clients with Low Remaining Quota (<1MB) ==="
+echo "=== Clients with Low Remaining Quota (<256MB) ==="
 jq -r --arg current_time "$CURRENT_TIME" '
     .clients[]
     | select(
         (.download_quota != "null" and .download_this_session != "null") and
-        ((.download_quota | tonumber) - (.download_this_session | tonumber)) < 1048576
+        ((.download_quota | tonumber) - (.download_this_session | tonumber)) < 268435456
     )
     | "MAC: \(.mac) - Remaining Download Quota: \((.download_quota | tonumber) - (.download_this_session | tonumber)) bytes"
 ' "$JSON_FILE"
@@ -127,6 +124,17 @@ jq -r --arg current_time "$CURRENT_TIME" '
     | select(
         (.last_active != "null") and
         (($current_time | tonumber) - (.last_active | tonumber)) > 3600
+    )
+    | "MAC: \(.mac) - Inactive for: \(($current_time | tonumber) - (.last_active | tonumber)) seconds"
+' "$JSON_FILE"
+
+# Get clients active for less than 5 minutes (300 seconds)
+echo "=== Active Clients (<5 minutes) ==="
+jq -r --arg current_time "$CURRENT_TIME" '
+    .clients[]
+    | select(
+        (.last_active != "null") and
+        (($current_time | tonumber) - (.last_active | tonumber)) < 300
     )
     | "MAC: \(.mac) - Inactive for: \(($current_time | tonumber) - (.last_active | tonumber)) seconds"
 ' "$JSON_FILE"
