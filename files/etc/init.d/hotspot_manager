@@ -77,6 +77,7 @@ cat << "EOF" | sh
                     uci set wireless.default_radio0.disabled=0
                     uci commit wireless
                     wifi  up
+		    /root/./get_moscow_time.sh
                 else
                     log_action "WiFi hotspot is already on and Internet and OpenNDS are available."
                 fi
