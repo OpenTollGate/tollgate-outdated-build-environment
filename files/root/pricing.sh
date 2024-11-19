@@ -28,12 +28,16 @@ CONTRIBUTION_AMOUNT=$(awk "BEGIN {print $PROFIT * $CONTRIBUTION / 100}")
 # Create JSON and save to file
 jq -n \
     --arg fiat_price "$(printf "%.2f" $FIAT_PRICE)" \
+    --arg sats_paid "$SATS_PAID" \
     --arg gb_allocation "$(printf "%.4f" $GB_ALLOCATION)" \
     --arg profit "$(printf "%.0f" $PROFIT)" \
     --arg contribution "$(printf "%.0f" $CONTRIBUTION_AMOUNT)" \
     '{
         fiat_price: $fiat_price,
         gb_allocation: $gb_allocation,
+        mb_allocation: ($gb_allocation | tonumber * 1024),
+        kb_allocation: ($gb_allocation | tonumber * 1048576 | round),
+        sats_paid: $sats_paid,
         profit_sats: $profit,
         contribution_sats: $contribution
     }' > /tmp/stack_growth.json
