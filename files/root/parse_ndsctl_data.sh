@@ -83,13 +83,19 @@ get_client_details() {
         | (
             (.download_this_session | tonumber) + (.upload_this_session | tonumber)
         ) as $total_data_usage
+        | (
+            if (.download_quota != "null") then
+                (.download_quota | tonumber) - $total_data_usage
+            else
+                0
+            end
+        ) as $remaining_data
         | "Client MAC: \(.mac)\n" +
           "  State: \(.state)\n" +
           "  Total Data Usage: \($total_data_usage) bytes\n" +
+          "  Remaining Data: \($remaining_data) bytes\n" +
           "  Remaining Session Time: \($remaining_session_time) seconds\n" +
           "  Time Since Last Active: \($time_since_last_active) seconds\n" +
-          "  Remaining Download Quota: \($remaining_download_quota) bytes\n" +
-          "  Remaining Upload Quota: \($remaining_upload_quota) bytes\n" +
           "  Session: \(.token)\n" +
           "----------------------------------------"
     ' "$JSON_FILE"
@@ -104,17 +110,16 @@ echo ""
 echo "=== Detailed Client Information ==="
 get_client_details
 
-
 # Additional calculations if needed
-# Get clients with low remaining quota (less than 1MB)
+# Get clients with low remaining quota (less than 256MB)
 echo "=== Clients with Low Remaining Quota (<256MB) ==="
 jq -r --arg current_time "$CURRENT_TIME" '
     .clients[]
     | select(
-        (.download_quota != "null" and .download_this_session != "null") and
-        ((.download_quota | tonumber) - (.download_this_session | tonumber)) < 268435456
+        (.download_quota != "null" and .download_this_session != "null" and .upload_this_session != "null") and
+        ((.download_quota | tonumber) - ((.download_this_session | tonumber) + (.upload_this_session | tonumber))) < 268435456
     )
-    | "MAC: \(.mac) - Remaining Download Quota: \((.download_quota | tonumber) - (.download_this_session | tonumber)) bytes"
+    | "MAC: \(.mac) - Remaining Data: \((.download_quota | tonumber) - ((.download_this_session | tonumber) + (.upload_this_session | tonumber))) bytes"
 ' "$JSON_FILE"
 
 # Get clients inactive for more than 1 hour (3600 seconds)
