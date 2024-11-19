@@ -1,19 +1,21 @@
 #!/bin/sh
 
-# Check if argument is provided
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 <sats_paid>"
+# Check if both arguments are provided
+if [ $# -ne 2 ]; then
+    echo "Usage: $0 <sats_paid> <note_hash>"
     exit 1
 fi
 
 # Read input values
 SATS_PAID=$1
+NOTE_HASH=$2
 COST=$(jq -r '.cost' /root/user_inputs.json)
 MARGINS=$(jq -r '.margins' /root/user_inputs.json)
 CONTRIBUTION=$(jq -r '.contribution' /root/user_inputs.json)
 SATS_PER_DOLLAR=$(jq -r '.sats_per_dollar' /tmp/moscow_time.json)
 
 # Calculate fiat price with margins
+# TODO: get FIAT_PRICE from /root/user_inputs.json
 FIAT_PRICE=$(awk "BEGIN {print $COST + ($COST * $MARGINS / 100)}")
 
 # Calculate gigabytes allocation
@@ -38,7 +40,7 @@ jq -n \
         sats_paid: $sats_paid,
         profit_sats: $profit,
         contribution_sats: $contribution
-    }' > /tmp/stack_growth.json
+    }' > "/tmp/stack_growth_${NOTE_HASH}.json"
 
 # Print success message
-echo "Calculations completed and saved to /tmp/stack_growth.json"
+echo "Calculations completed and saved to /tmp/stack_growth_${NOTE_HASH}.json"
