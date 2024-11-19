@@ -345,6 +345,10 @@ if [ ! -f /etc/first_login_done ]; then
 	    esac
 	done
 
+	# After getting cost and margins
+	FIAT_PRICE=$(awk "BEGIN {print $cost + ($cost * $margins / 100)}")
+	update_json_float "fiat_price" "$FIAT_PRICE"
+
         # Setup WiFi
         setup_wifi
         if verify_wifi_connection; then
