@@ -132,6 +132,7 @@ if [ $? -eq 0 ]; then
                 # Check internet connectivity
                 if check_internet; then
                     echo "Internet connectivity confirmed. Enabling AP..."
+		    /root/./get_moscow_time.sh
                     # Enable the AP
                     uci set wireless.default_radio0.disabled='0'
                     uci commit wireless

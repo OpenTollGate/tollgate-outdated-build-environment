@@ -262,6 +262,15 @@ update_json() {
     fi
 }
 
+# Function to update JSON with float value
+update_json_float() {
+    key=$1
+    value=$2
+    tmp=$(mktemp)
+    jq ".$key = ($value)" user_inputs.json > "$tmp" && mv "$tmp" user_inputs.json
+}
+
+
 if [ ! -f /etc/first_login_done ]; then
     if is_interactive; then
         update_json "script_started" "$(date)"
@@ -284,22 +293,24 @@ if [ ! -f /etc/first_login_done ]; then
         read operator_npub
         update_json "operator_npub" "$operator_npub"
 
-        # Prompt for costs
-        echo "What are your fiat liabilities? (USD / GB)"
-        read cost
-        update_json "cost" "$cost"
-
 	# Prompt for costs
 	echo "What are your fiat liabilities? (USD / GB)"
 	read cost
-	update_json "cost" "$cost"
+	case "$cost" in
+	    ''|*[!0-9.]*) 
+		echo "Please enter a valid number"
+		;;
+	    *)
+		update_json_float "cost" "$cost"
+		;;
+	esac
 
 	# Prompt for margins with validation
 	while true; do
 	    echo "How big do you want to make your margins? (percentage between 0-100)"
 	    read margins
 	    case "$margins" in
-		''|*[!0-9]*) 
+		''|*[!0-9.]*) 
 		    echo "Please enter a valid number"
 		    continue
 		    ;;
@@ -308,19 +319,18 @@ if [ ! -f /etc/first_login_done ]; then
 			echo "Margins must be between 0 and 100"
 			continue
 		    fi
-		    update_json "margins" "$margins"
+		    update_json_float "margins" "$margins"
 		    break
 		    ;;
 	    esac
 	done
 
-
-	# Prompt for margins with validation
+	# Prompt for contribution with validation
 	while true; do
-	    echo "How much of the margins do you want to contribute to the developers? (percentage between 0-100)"
+	    echo "How much of that margin do you want to contribute to the developers? (percentage between 0-100, eg. 50 for half)"
 	    read contribution
 	    case "$contribution" in
-		''|*[!0-9]*) 
+		''|*[!0-9.]*) 
 		    echo "Please enter a valid number"
 		    continue
 		    ;;
@@ -329,12 +339,11 @@ if [ ! -f /etc/first_login_done ]; then
 			echo "Contributions must be between 0 and 100 percent of the margin"
 			continue
 		    fi
-		    update_json "contribution" "$contribution"
+		    update_json_float "contribution" "$contribution"
 		    break
 		    ;;
 	    esac
 	done
-
 
         # Setup WiFi
         setup_wifi
