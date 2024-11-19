@@ -9,14 +9,10 @@ fi
 # Read input values
 SATS_PAID=$1
 NOTE_HASH=$2
-COST=$(jq -r '.cost' /root/user_inputs.json)
+FIAT_PRICE=$(jq -r '.fiat_price' /root/user_inputs.json)
 MARGINS=$(jq -r '.margins' /root/user_inputs.json)
 CONTRIBUTION=$(jq -r '.contribution' /root/user_inputs.json)
 SATS_PER_DOLLAR=$(jq -r '.sats_per_dollar' /tmp/moscow_time.json)
-
-# Calculate fiat price with margins
-# TODO: get FIAT_PRICE from /root/user_inputs.json
-FIAT_PRICE=$(awk "BEGIN {print $COST + ($COST * $MARGINS / 100)}")
 
 # Calculate gigabytes allocation
 GB_ALLOCATION=$(awk "BEGIN {print $SATS_PAID / $SATS_PER_DOLLAR / $FIAT_PRICE}")
