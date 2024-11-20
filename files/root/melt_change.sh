@@ -63,7 +63,10 @@ echo "$TOKENS" | while read -r token; do
     
     # Try to redeem the token based on provided option
     if [ -n "$username" ]; then
-        if $REDEEM_SCRIPT "$TEMP_TOKEN_FILE" -u "$username"; then
+        response=$($REDEEM_SCRIPT "$TEMP_TOKEN_FILE" -u "$username")
+        echo "$response"
+        
+        if echo "$response" | jq -e '.status == "success"' >/dev/null; then
             echo "Successfully melted token for username: $username"
             
             # Remove the processed token from changeTokens.json
@@ -73,7 +76,10 @@ echo "$TOKENS" | while read -r token; do
             echo "Failed to melt token for username: $username"
         fi
     else
-        if $REDEEM_SCRIPT "$TEMP_TOKEN_FILE" -l "$lightning_address"; then
+        response=$($REDEEM_SCRIPT "$TEMP_TOKEN_FILE" -l "$lightning_address")
+        echo "$response"
+        
+        if echo "$response" | jq -e '.status == "success"' >/dev/null; then
             echo "Successfully melted token for lightning address: $lightning_address"
             
             # Remove the processed token from changeTokens.json
