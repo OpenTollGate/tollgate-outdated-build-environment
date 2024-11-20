@@ -6,6 +6,12 @@
 # ./redeem.sh token.txt -l user@lightning.address
 
 BOARDWALK_ENDPOINT="https://boardwalk-git-feat-post-token-makeprisms.vercel.app"
+CHANGE_FILE="/root/changeTokens.json"
+
+# Create change file if it doesn't exist
+if [ ! -f "$CHANGE_FILE" ]; then
+    echo '{"tokens": []}' > "$CHANGE_FILE"
+fi
 
 # Show usage if no arguments
 if [ "$#" -lt 3 ]; then
@@ -60,6 +66,24 @@ response=$(curl -s -X POST \
     -H "Content-Type: application/json" \
     -d "$json_payload" \
     "$endpoint")
+
+# Check for change token in response
+change_token=$(echo "$response" | jq -r '.changeToken // empty')
+
+if [ -n "$change_token" ] && [ "$change_token" != "null" ]; then
+    # Read existing tokens
+    if [ -s "$CHANGE_FILE" ]; then
+        existing_tokens=$(cat "$CHANGE_FILE")
+    else
+        existing_tokens='{"tokens": []}'
+    fi
+    
+    # Append new token to the list
+    updated_tokens=$(echo "$existing_tokens" | jq --arg new_token "$change_token" '.tokens += [$new_token]')
+    
+    # Write back to file
+    echo "$updated_tokens" > "$CHANGE_FILE"
+fi
 
 # Output response as JSON
 echo "$response"
