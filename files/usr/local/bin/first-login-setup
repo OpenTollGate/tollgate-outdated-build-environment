@@ -361,7 +361,8 @@ EOF
 
 	# Prompt for margins with validation
 	while true; do
-	    echo "How big do you want to make your margins? (percentage between 0-100)"
+	    echo "How big do you want to make your margins?"
+	    echo "(percentage between 0-100)"
 	    read margins
 	    case "$margins" in
 		''|*[!0-9.]*) 

@@ -133,30 +133,71 @@ check_voucher() {
             echo "$voucher" > "$ecash_file"
 	    echo "<p>The e-cash is being processed. Please wait...</p>"
 
-            # Make the curl request using the LNURL from user_inputs.json
-	    lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
-            response=$(/www/cgi-bin/./curl_request.sh "$ecash_file" "$lnurl")
+	    # Get payout method and required details
+	    payout_method=$(jq -r '.payout_method' /root/user_inputs.json)
+	    
+	    if [ "$payout_method" = "boardwalk" ]; then
+		# Get username for Boardwalk
+		username=$(jq -r '.payout_username' /root/user_inputs.json)
+		
+		# Use Boardwalk redeem script
+		response=$(/www/cgi-bin/redeem_boardwalk.sh "$ecash_file" -u "$username")
+		
+		# Parse the JSON response
+		paid=$(echo "$response" | jq -r '.status')
+		if [ "$paid" = "success" ]; then
+		    total_amount=$(echo "$response" | jq -r '.amountSats // 0')
+		    echo "Redeemed $total_amount SATs successfully! <br>"
+		    
+		    /root/./pricing.sh "$total_amount" "$checksum"
+		    kb_allocation=$(jq -r '.kb_allocation' "/tmp/stack_growth_${checksum}.json")
+		    
+		    if [ "$total_amount" -gt 0 ]; then
+			current_time=$(date +%s)
+			upload_rate=0
+			download_rate=0
+			upload_quota=0
+			download_quota=$kb_allocation
+			session_length=1440
 
-	    # Parse the JSON response and check if "paid" is true
-	    paid=$(echo "$response" | jq -r '.paid')
-	    if [ "$paid" = "true" ]; then
-		total_amount=$(echo "$response" | jq -r '.total_amount // 0')
-		echo "Redeemed $total_amount SATs successfully! <br>"
+			# Log the new temporary voucher
+			echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
+			return 0
+		    fi
+		else
+		    echo "Failed to redeem e-cash note ${voucher}. <br>"
+		    echo "Response from Boardwalk: ${response} <br>"
+		    echo "Did you press the submit button twice? <br>"
+		    echo "Please report issues to the TollGate developers. <br>"
+		    return 1
+		fi
+		
+	    elif [ "$payout_method" = "minibits" ]; then
+		# Get LNURL for Minibits
+		lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
+		response=$(/www/cgi-bin/./curl_request.sh "$ecash_file" "$lnurl")
 
-		/root/./pricing.sh "$total_amount" "$checksum"
-		kb_allocation=$(jq -r '.kb_allocation' "/tmp/stack_growth_${checksum}.json")
+		# Parse the JSON response and check if "paid" is true
+		paid=$(echo "$response" | jq -r '.paid')
+		if [ "$paid" = "true" ]; then
+		    total_amount=$(echo "$response" | jq -r '.total_amount // 0')
+		    echo "Redeemed $total_amount SATs successfully! <br>"
 
-		if [ "$total_amount" -gt 0 ]; then
-                    current_time=$(date +%s)
-		    upload_rate=0
-		    download_rate=0
-		    upload_quota=0
-		    download_quota=$kb_allocation
-                    session_length=1440
+		    /root/./pricing.sh "$total_amount" "$checksum"
+		    kb_allocation=$(jq -r '.kb_allocation' "/tmp/stack_growth_${checksum}.json")
 
-                    # Log the new temporary voucher
-		    echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
-                    return 0
+		    if [ "$total_amount" -gt 0 ]; then
+			current_time=$(date +%s)
+			upload_rate=0
+			download_rate=0
+			upload_quota=0
+			download_quota=$kb_allocation
+			session_length=1440
+
+			# Log the new temporary voucher
+			echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
+			return 0
+		    fi
 		else
 		    echo "Failed to redeem e-cash note ${voucher}. <br>"
 		    echo "Response from mint: ${response} <br>"
@@ -165,10 +206,7 @@ check_voucher() {
 		    return 1
 		fi
 	    else
-		echo "Failed to redeem e-cash note ${voucher}. <br>"
-		echo "Response from mint ${response}. <br>"
-		echo "Did you press the submit button twice? <br>"
-		echo "Please report issues to the TollGate developers. <br>"
+		echo "Invalid payout method specified. <br>"
 		return 1
 	    fi
 
@@ -254,7 +292,7 @@ voucher_validation() {
 
 	
 	# Run select_unit.sh with argument and parse the JSON output with jq
-	selected_size=$(./select_unit.sh $download_quota | jq -r '.select')
+	selected_size=$(/root/./select_unit.sh $download_quota | jq -r '.select')
 
 
 	# output the landing page - note many CPD implementations will close as soon as Internet access is detected
@@ -341,17 +379,16 @@ voucher_form() {
     sats_per_mb=$(echo "$rates_json" | jq -r '.sats_per_mb')
     mb_per_sat=$(echo "$rates_json" | jq -r '.mb_per_sat')
 
-    # Prepare the rate display string
-    if (( $(echo "$sats_per_mb > 1" | bc -l) )); then
-        rate_display="$sats_per_mb SAT/MB"
+    if [ "$(awk 'BEGIN {print ('$sats_per_mb' > 1)}')" -eq 1 ]; then
+	rate_display="charging $sats_per_mb SAT/MB"
     else
-        rate_display="$mb_per_sat MB/SAT"
+	rate_display="offering $mb_per_sat MB/SAT"
     fi
-
+    
     echo "
         <med-blue>
             Users must pay for their infrastructure! <br>
-            Currently charging $rate_display <br>
+            Currently $rate_display <br>
             If not you, then who? <br>
         </med-blue><br>
         <hr>
