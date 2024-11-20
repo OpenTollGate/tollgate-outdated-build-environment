@@ -338,8 +338,8 @@ voucher_form() {
     echo "
         <med-blue>
             Users must pay for their infrastructure! <br>
+            Currently charging $sats_per_mb SAT/MB <br>
             If not you, then who? <br>
-            Currently charging $sats_per_mb SAT/MB
         </med-blue><br>
         <hr>
         Your IP: $clientip <br>
