@@ -200,12 +200,12 @@ check_voucher() {
 	    lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
             response=$(/www/cgi-bin/./curl_request.sh "$ecash_file" "$lnurl")
 
-	    /root/./pricing.sh "$sats" "$checksum"
-	    kb_allocation=$(jq -r '.kb_allocation' "/tmp/stack_growth_${checksum}.json")
-
 	    # echo "minutes: $minutes" >> /tmp/lnurlwpaid.md
 
 	    if [[ "$status" == "OK" && -n "$paid_amount" ]]; then
+		/root/./pricing.sh "$sats" "$checksum"
+		kb_allocation=$(jq -r '.kb_allocation' "/tmp/stack_growth_${checksum}.json")
+		
 		# echo "$status" >> /tmp/lnurlwpaid.md
 		current_time=$(date +%s)
 		upload_rate=0
@@ -213,6 +213,8 @@ check_voucher() {
 		upload_quota=0
 		download_quota=$kb_allocation
 		session_length=1440
+
+		/root/./manage_lnurlws.sh $clientmac $voucher
 
 		# Log the new temporary voucher
 		echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
@@ -256,7 +258,7 @@ voucher_validation() {
 			<p>
 				<hr>
 			</p>
-			Granted $download_quota killobytes of internet access.
+			Granted $download_quota kilobytes of internet access.
 			<hr>
 			<p>
 				<italic-black>

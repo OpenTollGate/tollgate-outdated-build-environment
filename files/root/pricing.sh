@@ -39,4 +39,4 @@ jq -n \
     }' > "/tmp/stack_growth_${NOTE_HASH}.json"
 
 # Print success message
-echo "Calculations completed and saved to /tmp/stack_growth_${NOTE_HASH}.json"
+# echo "Calculations completed and saved to /tmp/stack_growth_${NOTE_HASH}.json"
