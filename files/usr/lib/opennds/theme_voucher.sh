@@ -252,13 +252,18 @@ voucher_validation() {
 	# Authenticate and write to the log - returns with $ndsstatus set
 	auth_log
 
+	
+	# Run select_unit.sh with argument and parse the JSON output with jq
+	selected_size=$(./select_unit.sh $download_quota | jq -r '.select')
+
+
 	# output the landing page - note many CPD implementations will close as soon as Internet access is detected
 	# The client may not see this page, or only see it briefly
 	auth_success="
 			<p>
 				<hr>
 			</p>
-			Granted $download_quota kilobytes of internet access.
+			Granted $selected_size of internet access.
 			<hr>
 			<p>
 				<italic-black>
