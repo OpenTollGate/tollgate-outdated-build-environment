@@ -332,13 +332,21 @@ voucher_form() {
     # Store the entire JSON output in a variable
     rates_json=$(/root/./calculate_rates.sh)
 
-    # Extract sats_per_mb value using jq
+    # Extract both values using jq
     sats_per_mb=$(echo "$rates_json" | jq -r '.sats_per_mb')
+    mb_per_sat=$(echo "$rates_json" | jq -r '.mb_per_sat')
+
+    # Prepare the rate display string
+    if (( $(echo "$sats_per_mb > 1" | bc -l) )); then
+        rate_display="$sats_per_mb SAT/MB"
+    else
+        rate_display="$mb_per_sat MB/SAT"
+    fi
 
     echo "
         <med-blue>
             Users must pay for their infrastructure! <br>
-            Currently charging $sats_per_mb SAT/MB <br>
+            Currently charging $rate_display <br>
             If not you, then who? <br>
         </med-blue><br>
         <hr>
@@ -353,7 +361,7 @@ voucher_form() {
         </form>
         <br>
 
-	<hr>
+        <hr>
     "
 
     footer
