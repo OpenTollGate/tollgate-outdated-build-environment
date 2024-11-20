@@ -127,7 +127,6 @@ check_voucher() {
 	# Use checksum in filename
 	ecash_file="/tmp/ecash_${checksum}.md"
 
-
 	# Only proceed if the file doesn't exist
 	if [ ! -f "$ecash_file" ]; then
             # Echo voucher to file with checksum in name
@@ -144,13 +143,16 @@ check_voucher() {
 		total_amount=$(echo "$response" | jq -r '.total_amount // 0')
 		echo "Redeemed $total_amount SATs successfully! <br>"
 
+		/root/./pricing.sh "$total_amount" "$checksum"
+		kb_allocation=$(jq -r '.kb_allocation' "/tmp/stack_growth_${checksum}.json")
+
 		if [ "$total_amount" -gt 0 ]; then
                     current_time=$(date +%s)
 		    upload_rate=0
 		    download_rate=0
 		    upload_quota=0
-		    download_quota=0
-                    session_length=$total_amount
+		    download_quota=$kb_allocation
+                    session_length=1440
 
                     # Log the new temporary voucher
 		    echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
@@ -194,17 +196,25 @@ check_voucher() {
 	    status=$(echo "$response" | jq -r '.status' 2>/dev/null)
             paid_amount=$(echo "$response" | jq -r '.paid_amount' 2>/dev/null)
 
-	    minutes=$(($amount/1000))
+	    sats=$(($amount/1000))
+	    lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
+            response=$(/www/cgi-bin/./curl_request.sh "$ecash_file" "$lnurl")
+
 	    # echo "minutes: $minutes" >> /tmp/lnurlwpaid.md
 
 	    if [[ "$status" == "OK" && -n "$paid_amount" ]]; then
+		/root/./pricing.sh "$sats" "$checksum"
+		kb_allocation=$(jq -r '.kb_allocation' "/tmp/stack_growth_${checksum}.json")
+		
 		# echo "$status" >> /tmp/lnurlwpaid.md
 		current_time=$(date +%s)
 		upload_rate=0
 		download_rate=0
 		upload_quota=0
-		download_quota=0
-		session_length=$minutes
+		download_quota=$kb_allocation
+		session_length=1440
+
+		/root/./manage_lnurlws.sh $clientmac $voucher
 
 		# Log the new temporary voucher
 		echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
@@ -248,11 +258,11 @@ voucher_validation() {
 			<p>
 				<hr>
 			</p>
-			Granted $session_length minutes of internet access.
+			Granted $download_quota kilobytes of internet access.
 			<hr>
 			<p>
 				<italic-black>
-					You can use your Browser, Email and other network Apps as you normally would.
+					You can now use your browser, nostr client and stack sats as you normally would.
 				</italic-black>
 			</p>
 			<p>
@@ -319,9 +329,17 @@ voucher_form() {
 
     voucher_code=$(echo "$cpi_query" | awk -F "voucher%3d" '{printf "%s", $2}' | awk -F "%26" '{printf "%s", $1}')
 
+    # Store the entire JSON output in a variable
+    rates_json=$(/root/./calculate_rates.sh)
+
+    # Extract sats_per_mb value using jq
+    sats_per_mb=$(echo "$rates_json" | jq -r '.sats_per_mb')
+
     echo "
         <med-blue>
-            Users must pay for their infrastructure! If not you, then who?
+            Users must pay for their infrastructure! <br>
+            Currently charging $sats_per_mb SAT/MB <br>
+            If not you, then who? <br>
         </med-blue><br>
         <hr>
         Your IP: $clientip <br>
