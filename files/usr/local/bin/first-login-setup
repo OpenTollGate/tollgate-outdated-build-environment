@@ -283,10 +283,64 @@ if [ ! -f /etc/first_login_done ]; then
         passwd
         update_json "password_set" "true"
 
-        # Prompt for LNURL
-        echo "Please enter your minibits LNURL to receive payments:"
-        read lnurl
-        update_json "payout_lnurl" "$lnurl"
+	# Display options and information
+	cat << EOF
+# E-cash Payment Setup
+
+## About Payment Methods
+
+There are two ways to receive e-cash payments:
+
+### 1. Minibits LNURL
+- ✅ Automatically receive payments without interaction
+- ✅ Backup/recovery via seedphrase
+- ❌ Limited to cashuA notes from mint.minibits.cash only
+
+### 2. Boardwalk Username  
+- ✅ Accept e-cash from any mint
+- ✅ Maximum flexibility with note types
+- ❌ Must manually accept each payment
+
+## Choose Your Payment Method
+
+Enter the number of your preferred payment method:
+1. Minibits LNURL
+2. Boardwalk Username
+EOF
+
+	# Get user selection
+	read -p "Enter selection (1-2): " choice
+
+	case $choice in
+	    1)
+		read -p "Enter your Minibits LNURL (format: username@minibits.cash): " lnurl
+		# Validate LNURL format
+		if [[ $lnurl =~ .+@minibits\.cash$ ]]; then
+		    update_json "payout_method" "minibits"
+		    update_json "payout_lnurl" "$lnurl"
+		else
+		    echo "Error: Invalid LNURL format"
+		    exit 1
+		fi
+		;;
+	    
+	    2)  
+		read -p "Enter your Boardwalk username (format: user-xxxxx): " username
+		# Validate username format
+		if [[ $username =~ ^user-[a-f0-9]{5}$ ]]; then
+		    update_json "payout_method" "boardwalk" 
+		    update_json "payout_username" "$username"
+		else
+		    echo "Error: Invalid username format"
+		    exit 1
+		fi
+		;;
+	    
+	    *)
+		echo "Invalid selection"
+		exit 1
+		;;
+	esac
 
         # Prompt for the operator's npub
         echo "Please enter the npub of the TollGate operator of this router:"
