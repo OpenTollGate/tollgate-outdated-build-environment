@@ -361,6 +361,7 @@ voucher_form() {
         <form action=\"/opennds_preauth/\" method=\"get\">
             <input type=\"hidden\" name=\"fas\" value=\"$fas\">
             <input type=\"hidden\" name=\"tos\" value=\"accepted\">
+            Purchased data must be used within 24 hours. <br>
             Only accepting notes from minibits.cash <br>
             Pay here: <input type=\"text\" name=\"voucher\" value=\"$voucher_code\" required> <input type=\"submit\" value=\"Connect\" >
         </form>
