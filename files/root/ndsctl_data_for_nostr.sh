@@ -1,14 +1,13 @@
 #!/bin/sh
 
 JSON_FILE="/tmp/pricing_inputs.json"
+/root/./save_ndsctl_data.sh
 
 # Check if file exists
 if [ ! -f "$JSON_FILE" ]; then
     echo "{\"error\": \"$JSON_FILE not found\"}"
     exit 1
 fi
-
-/root/./save_ndsctl_data.sh
 
 # Get current timestamp
 CURRENT_TIME=$(date +%s)
