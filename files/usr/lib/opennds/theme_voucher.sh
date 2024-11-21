@@ -136,19 +136,38 @@ check_voucher() {
 	    # Get payout method and required details
 	    payout_method=$(jq -r '.payout_method' /root/user_inputs.json)
 	    
-	    if [ "$payout_method" = "boardwalk" ]; then
-		# Get username for Boardwalk
-		username=$(jq -r '.payout_username' /root/user_inputs.json)
-		
-		# Use Boardwalk redeem script
-		response=$(/www/cgi-bin/redeem_boardwalk.sh "$ecash_file" -u "$username")
-		
-		# Parse the JSON response
-		paid=$(echo "$response" | jq -r '.status')
-		if [ "$paid" = "success" ]; then
-		    total_amount=$(echo "$response" | jq -r '.amountSats // 0')
-		    echo "Redeemed $total_amount SATs successfully! <br>"
+	    if [ "$payout_method" != "boardwalk" ] && [ "$payout_method" != "minibits" ]; then
+		echo "Invalid payout method specified. <br>"
+		return 1
+	    else
+		if [ "$payout_method" = "boardwalk" ]; then
+		    # Get username for Boardwalk
+		    username=$(jq -r '.payout_username' /root/user_inputs.json)
 		    
+		    # Use Boardwalk redeem script
+		    response=$(/www/cgi-bin/redeem_boardwalk.sh "$ecash_file" -u "$username")
+		    
+		    # Parse the JSON response
+		    paid=$(echo "$response" | jq -r '.status')
+		    if [ "$paid" = "success" ]; then
+			total_amount=$(echo "$response" | jq -r '.amountSats // 0')
+			echo "Redeemed $total_amount SATs successfully! <br>"
+		    fi
+		    
+		elif [ "$payout_method" = "minibits" ]; then
+		    # Get LNURL for Minibits
+		    lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
+		    response=$(/www/cgi-bin/./curl_request.sh "$ecash_file" "$lnurl")
+
+		    # Parse the JSON response and check if "paid" is true
+		    paid=$(echo "$response" | jq -r '.paid')
+		    if [ "$paid" = "true" ]; then
+			total_amount=$(echo "$response" | jq -r '.total_amount // 0')
+			echo "Redeemed $total_amount SATs successfully! <br>"
+		    fi
+		fi
+
+		if [ "$paid" = "true" ] || [ "$paid" = "success" ]; then
 		    /root/./pricing.sh "$total_amount" "$checksum"
 		    kb_allocation=$(jq -r '.kb_allocation' "/tmp/stack_growth_${checksum}.json")
 		    
@@ -171,22 +190,46 @@ check_voucher() {
 		    echo "Please report issues to the TollGate developers. <br>"
 		    return 1
 		fi
-		
-	    elif [ "$payout_method" = "minibits" ]; then
-		# Get LNURL for Minibits
+	    else
+		echo "E-cash note was already submitted, please wait for mint to respond. <br>"
+	    fi
+
+	elif [ $(echo -n "$voucher" | grep -ic "lnurl") -ge 1 ]; then
+	    if [ "$payout_method" != "minibits" ]; then
+		echo "Invalid payout method specified. <br>"
+		echo "The recepient needs to specify a mint.minibits.cash LNURL. <br>"
+		return 1
+	    else
+
+		# Compute checksum of voucher and store in variable
+		checksum=$(echo -n "$voucher" | sha256sum | cut -d' ' -f1)
+
+		# Use checksum in filename
+		lnurlw_file="/tmp/lnurl_${clientmac}_${checksum}.md"
+		echo "$voucher" > "$lnurlw_file"
+
+		amount=1000
 		lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
-		response=$(/www/cgi-bin/./curl_request.sh "$ecash_file" "$lnurl")
 
-		# Parse the JSON response and check if "paid" is true
-		paid=$(echo "$response" | jq -r '.paid')
-		if [ "$paid" = "true" ]; then
-		    total_amount=$(echo "$response" | jq -r '.total_amount // 0')
-		    echo "Redeemed $total_amount SATs successfully! <br>"
+		response=$(/www/cgi-bin/./redeem_lnurlw.sh "$lnurlw_file" "$amount" "$lnurl")
+		# {"status":"OK", "paid_amount":256000}
+		# echo "$response" >> /tmp/lnurlwpaid.md
 
-		    /root/./pricing.sh "$total_amount" "$checksum"
-		    kb_allocation=$(jq -r '.kb_allocation' "/tmp/stack_growth_${checksum}.json")
+		if [[ -n "$response" ]]; then
+		    status=$(echo "$response" | jq -r '.status' 2>/dev/null)
+		    paid_amount=$(echo "$response" | jq -r '.paid_amount' 2>/dev/null)
 
-		    if [ "$total_amount" -gt 0 ]; then
+		    sats=$(($amount/1000))
+		    lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
+		    response=$(/www/cgi-bin/./curl_request.sh "$ecash_file" "$lnurl")
+
+		    # echo "minutes: $minutes" >> /tmp/lnurlwpaid.md
+
+		    if [[ "$status" == "OK" && -n "$paid_amount" ]]; then
+			/root/./pricing.sh "$sats" "$checksum"
+			kb_allocation=$(jq -r '.kb_allocation' "/tmp/stack_growth_${checksum}.json")
+			
+			# echo "$status" >> /tmp/lnurlwpaid.md
 			current_time=$(date +%s)
 			upload_rate=0
 			download_rate=0
@@ -194,85 +237,30 @@ check_voucher() {
 			download_quota=$kb_allocation
 			session_length=1440
 
+			/root/./manage_lnurlws.sh $clientmac $voucher
+
 			# Log the new temporary voucher
 			echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
 			return 0
+		    else
+			echo "Error parsing JSON or invalid response" >> /tmp/lnurlwpaid.md
+			return 1
 		    fi
 		else
-		    echo "Failed to redeem e-cash note ${voucher}. <br>"
-		    echo "Response from mint: ${response} <br>"
-		    echo "Did you press the submit button twice? <br>"
-		    echo "Please report issues to the TollGate developers. <br>"
+		    echo "Empty response from redeem_lnurlw.sh - Retry <br>"
+		    echo "Empty response from redeem_lnurlw.sh" >> /tmp/lnurlwpaid.md
 		    return 1
 		fi
 	    else
-		echo "Invalid payout method specified. <br>"
+		echo "No input - Retry <br>"
 		return 1
 	    fi
 
-	else
-	    echo "E-cash note was already submitted, please wait for mint to respond. <br>"
+	    
 	fi
-
-    elif [ $(echo -n "$voucher" | grep -ic "lnurl") -ge 1 ]; then
-
-	# Compute checksum of voucher and store in variable
-	checksum=$(echo -n "$voucher" | sha256sum | cut -d' ' -f1)
-
-	# Use checksum in filename
-	lnurlw_file="/tmp/lnurl_${clientmac}_${checksum}.md"
-        echo "$voucher" > "$lnurlw_file"
-
-	amount=1000
-	lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
-
-	response=$(/www/cgi-bin/./redeem_lnurlw.sh "$lnurlw_file" "$amount" "$lnurl")
-	# {"status":"OK", "paid_amount":256000}
-	# echo "$response" >> /tmp/lnurlwpaid.md
-
-	if [[ -n "$response" ]]; then
-	    status=$(echo "$response" | jq -r '.status' 2>/dev/null)
-            paid_amount=$(echo "$response" | jq -r '.paid_amount' 2>/dev/null)
-
-	    sats=$(($amount/1000))
-	    lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
-            response=$(/www/cgi-bin/./curl_request.sh "$ecash_file" "$lnurl")
-
-	    # echo "minutes: $minutes" >> /tmp/lnurlwpaid.md
-
-	    if [[ "$status" == "OK" && -n "$paid_amount" ]]; then
-		/root/./pricing.sh "$sats" "$checksum"
-		kb_allocation=$(jq -r '.kb_allocation' "/tmp/stack_growth_${checksum}.json")
-		
-		# echo "$status" >> /tmp/lnurlwpaid.md
-		current_time=$(date +%s)
-		upload_rate=0
-		download_rate=0
-		upload_quota=0
-		download_quota=$kb_allocation
-		session_length=1440
-
-		/root/./manage_lnurlws.sh $clientmac $voucher
-
-		# Log the new temporary voucher
-		echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
-		return 0
-            else
-		echo "Error parsing JSON or invalid response" >> /tmp/lnurlwpaid.md
-		return 1
-	    fi
-	else
-	    echo "Empty response from redeem_lnurlw.sh - Retry <br>"
-            echo "Empty response from redeem_lnurlw.sh" >> /tmp/lnurlwpaid.md
-	    return 1
-	fi
-    else
-	echo "No input - Retry <br>"
+	
+	# Should not get here
 	return 1
-    fi
-    
-    # Should not get here
-    return 1
 }
 
 voucher_validation() {
