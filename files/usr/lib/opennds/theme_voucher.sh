@@ -155,19 +155,6 @@ check_voucher() {
 			
 			/root/./pricing.sh "$total_amount" "$checksum"
 			kb_allocation=$(jq -r '.kb_allocation' "/tmp/stack_growth_${checksum}.json")
-			
-			if [ "$total_amount" -gt 0 ]; then
-			    current_time=$(date +%s)
-			    upload_rate=0
-			    download_rate=0
-			    upload_quota=0
-			    download_quota=$kb_allocation
-			    session_length=1440
-
-			    # Log the new temporary voucher
-			    echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
-			    return 0
-			fi
 		    else
 			echo "Failed to redeem e-cash note ${voucher}. <br>"
 			echo "Response from Boardwalk: ${response} <br>"
@@ -189,7 +176,15 @@ check_voucher() {
 
 			/root/./pricing.sh "$total_amount" "$checksum"
 			kb_allocation=$(jq -r '.kb_allocation' "/tmp/stack_growth_${checksum}.json")
+		    else
+			echo "Failed to redeem e-cash note ${voucher}. <br>"
+			echo "Response from mint: ${response} <br>"
+			echo "Did you press the submit button twice? <br>"
+			echo "Please report issues to the TollGate developers. <br>"
+			return 1
+		    fi
 
+		    if [ "$paid" = "success" ] || [ "$paid" = "true" ]; then
 			if [ "$total_amount" -gt 0 ]; then
 			    current_time=$(date +%s)
 			    upload_rate=0
@@ -202,12 +197,6 @@ check_voucher() {
 			    echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
 			    return 0
 			fi
-		    else
-			echo "Failed to redeem e-cash note ${voucher}. <br>"
-			echo "Response from mint: ${response} <br>"
-			echo "Did you press the submit button twice? <br>"
-			echo "Please report issues to the TollGate developers. <br>"
-			return 1
 		    fi
 		else
 		    echo "Invalid payout method specified. <br>"
