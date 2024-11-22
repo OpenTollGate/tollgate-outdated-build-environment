@@ -152,9 +152,6 @@ check_voucher() {
 		    if [ "$paid" = "success" ]; then
 			total_amount=$(echo "$response" | jq -r '.amountSats // 0')
 			echo "Redeemed $total_amount SATs successfully! <br>"
-			
-			/root/./pricing.sh "$total_amount" "$checksum"
-			kb_allocation=$(jq -r '.kb_allocation' "/tmp/stack_growth_${checksum}.json")
 		    else
 			echo "Failed to redeem e-cash note ${voucher}. <br>"
 			echo "Response from Boardwalk: ${response} <br>"
@@ -162,7 +159,6 @@ check_voucher() {
 			echo "Please report issues to the TollGate developers. <br>"
 			return 1
 		    fi
-		    
 		elif [ "$payout_method" = "minibits" ]; then
 		    # Get LNURL for Minibits
 		    lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
@@ -173,9 +169,6 @@ check_voucher() {
 		    if [ "$paid" = "true" ]; then
 			total_amount=$(echo "$response" | jq -r '.total_amount // 0')
 			echo "Redeemed $total_amount SATs successfully! <br>"
-
-			/root/./pricing.sh "$total_amount" "$checksum"
-			kb_allocation=$(jq -r '.kb_allocation' "/tmp/stack_growth_${checksum}.json")
 		    else
 			echo "Failed to redeem e-cash note ${voucher}. <br>"
 			echo "Response from mint: ${response} <br>"
@@ -185,6 +178,10 @@ check_voucher() {
 		    fi
 
 		    if [ "$paid" = "success" ] || [ "$paid" = "true" ]; then
+
+			/root/./pricing.sh "$total_amount" "$checksum"
+			kb_allocation=$(jq -r '.kb_allocation' "/tmp/stack_growth_${checksum}.json")
+
 			if [ "$total_amount" -gt 0 ]; then
 			    current_time=$(date +%s)
 			    upload_rate=0
