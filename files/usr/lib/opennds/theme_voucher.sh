@@ -140,6 +140,7 @@ check_voucher() {
 		echo "Invalid payout method specified. <br>"
 		return 1
 	    else
+		paid="notyet"
 		if [ "$payout_method" = "boardwalk" ]; then
 		    # Get username for Boardwalk
 		    username=$(jq -r '.payout_username' /root/user_inputs.json)
@@ -152,12 +153,6 @@ check_voucher() {
 		    if [ "$paid" = "success" ]; then
 			total_amount=$(echo "$response" | jq -r '.amountSats // 0')
 			echo "Redeemed $total_amount SATs successfully! <br>"
-		    else
-			echo "Failed to redeem e-cash note ${voucher}. <br>"
-			echo "Response from Boardwalk: ${response} <br>"
-			echo "Did you press the submit button twice? <br>"
-			echo "Please report issues to the TollGate developers. <br>"
-			return 1
 		    fi
 		elif [ "$payout_method" = "minibits" ]; then
 		    # Get LNURL for Minibits
@@ -169,6 +164,27 @@ check_voucher() {
 		    if [ "$paid" = "true" ]; then
 			total_amount=$(echo "$response" | jq -r '.total_amount // 0')
 			echo "Redeemed $total_amount SATs successfully! <br>"
+		    fi
+		else
+		    echo "Invalid payout method specified. <br>"
+		    return 1
+		fi
+
+		if [ "$paid" = "success" ] || [ "$paid" = "true" ]; then
+		    /root/./pricing.sh "$total_amount" "$checksum"
+		    kb_allocation=$(jq -r '.kb_allocation' "/tmp/stack_growth_${checksum}.json")
+
+		    if [ "$total_amount" -gt 0 ]; then
+			current_time=$(date +%s)
+			upload_rate=0
+			download_rate=0
+			upload_quota=0
+			download_quota=$kb_allocation
+			session_length=1440
+
+			# Log the new temporary voucher
+			echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
+			return 0
 		    else
 			echo "Failed to redeem e-cash note ${voucher}. <br>"
 			echo "Response from mint: ${response} <br>"
@@ -176,28 +192,6 @@ check_voucher() {
 			echo "Please report issues to the TollGate developers. <br>"
 			return 1
 		    fi
-
-		    if [ "$paid" = "success" ] || [ "$paid" = "true" ]; then
-
-			/root/./pricing.sh "$total_amount" "$checksum"
-			kb_allocation=$(jq -r '.kb_allocation' "/tmp/stack_growth_${checksum}.json")
-
-			if [ "$total_amount" -gt 0 ]; then
-			    current_time=$(date +%s)
-			    upload_rate=0
-			    download_rate=0
-			    upload_quota=0
-			    download_quota=$kb_allocation
-			    session_length=1440
-
-			    # Log the new temporary voucher
-			    echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
-			    return 0
-			fi
-		    fi
-		else
-		    echo "Invalid payout method specified. <br>"
-		    return 1
 		fi
 	    fi
 	else
