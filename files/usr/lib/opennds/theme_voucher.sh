@@ -152,6 +152,28 @@ check_voucher() {
 		    if [ "$paid" = "success" ]; then
 			total_amount=$(echo "$response" | jq -r '.amountSats // 0')
 			echo "Redeemed $total_amount SATs successfully! <br>"
+			
+			/root/./pricing.sh "$total_amount" "$checksum"
+			kb_allocation=$(jq -r '.kb_allocation' "/tmp/stack_growth_${checksum}.json")
+			
+			if [ "$total_amount" -gt 0 ]; then
+			    current_time=$(date +%s)
+			    upload_rate=0
+			    download_rate=0
+			    upload_quota=0
+			    download_quota=$kb_allocation
+			    session_length=1440
+
+			    # Log the new temporary voucher
+			    echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
+			    return 0
+			fi
+		    else
+			echo "Failed to redeem e-cash note ${voucher}. <br>"
+			echo "Response from Boardwalk: ${response} <br>"
+			echo "Did you press the submit button twice? <br>"
+			echo "Please report issues to the TollGate developers. <br>"
+			return 1
 		    fi
 		    
 		elif [ "$payout_method" = "minibits" ]; then
@@ -164,103 +186,97 @@ check_voucher() {
 		    if [ "$paid" = "true" ]; then
 			total_amount=$(echo "$response" | jq -r '.total_amount // 0')
 			echo "Redeemed $total_amount SATs successfully! <br>"
-		    fi
-		fi
 
-		if [ "$paid" = "true" ] || [ "$paid" = "success" ]; then
-		    /root/./pricing.sh "$total_amount" "$checksum"
-		    kb_allocation=$(jq -r '.kb_allocation' "/tmp/stack_growth_${checksum}.json")
-		    
-		    if [ "$total_amount" -gt 0 ]; then
-			current_time=$(date +%s)
-			upload_rate=0
-			download_rate=0
-			upload_quota=0
-			download_quota=$kb_allocation
-			session_length=1440
-
-			# Log the new temporary voucher
-			echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
-			return 0
-		    fi
-		else
-		    echo "Failed to redeem e-cash note ${voucher}. <br>"
-		    echo "Response from Boardwalk: ${response} <br>"
-		    echo "Did you press the submit button twice? <br>"
-		    echo "Please report issues to the TollGate developers. <br>"
-		    return 1
-		fi
-	    else
-		echo "E-cash note was already submitted, please wait for mint to respond. <br>"
-	    fi
-
-	elif [ $(echo -n "$voucher" | grep -ic "lnurl") -ge 1 ]; then
-	    if [ "$payout_method" != "minibits" ]; then
-		echo "Invalid payout method specified. <br>"
-		echo "The recepient needs to specify a mint.minibits.cash LNURL. <br>"
-		return 1
-	    else
-
-		# Compute checksum of voucher and store in variable
-		checksum=$(echo -n "$voucher" | sha256sum | cut -d' ' -f1)
-
-		# Use checksum in filename
-		lnurlw_file="/tmp/lnurl_${clientmac}_${checksum}.md"
-		echo "$voucher" > "$lnurlw_file"
-
-		amount=1000
-		lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
-
-		response=$(/www/cgi-bin/./redeem_lnurlw.sh "$lnurlw_file" "$amount" "$lnurl")
-		# {"status":"OK", "paid_amount":256000}
-		# echo "$response" >> /tmp/lnurlwpaid.md
-
-		if [[ -n "$response" ]]; then
-		    status=$(echo "$response" | jq -r '.status' 2>/dev/null)
-		    paid_amount=$(echo "$response" | jq -r '.paid_amount' 2>/dev/null)
-
-		    sats=$(($amount/1000))
-		    lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
-		    response=$(/www/cgi-bin/./curl_request.sh "$ecash_file" "$lnurl")
-
-		    # echo "minutes: $minutes" >> /tmp/lnurlwpaid.md
-
-		    if [[ "$status" == "OK" && -n "$paid_amount" ]]; then
-			/root/./pricing.sh "$sats" "$checksum"
+			/root/./pricing.sh "$total_amount" "$checksum"
 			kb_allocation=$(jq -r '.kb_allocation' "/tmp/stack_growth_${checksum}.json")
-			
-			# echo "$status" >> /tmp/lnurlwpaid.md
-			current_time=$(date +%s)
-			upload_rate=0
-			download_rate=0
-			upload_quota=0
-			download_quota=$kb_allocation
-			session_length=1440
 
-			/root/./manage_lnurlws.sh $clientmac $voucher
+			if [ "$total_amount" -gt 0 ]; then
+			    current_time=$(date +%s)
+			    upload_rate=0
+			    download_rate=0
+			    upload_quota=0
+			    download_quota=$kb_allocation
+			    session_length=1440
 
-			# Log the new temporary voucher
-			echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
-			return 0
+			    # Log the new temporary voucher
+			    echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
+			    return 0
+			fi
 		    else
-			echo "Error parsing JSON or invalid response" >> /tmp/lnurlwpaid.md
+			echo "Failed to redeem e-cash note ${voucher}. <br>"
+			echo "Response from mint: ${response} <br>"
+			echo "Did you press the submit button twice? <br>"
+			echo "Please report issues to the TollGate developers. <br>"
 			return 1
 		    fi
 		else
-		    echo "Empty response from redeem_lnurlw.sh - Retry <br>"
-		    echo "Empty response from redeem_lnurlw.sh" >> /tmp/lnurlwpaid.md
+		    echo "Invalid payout method specified. <br>"
 		    return 1
 		fi
-	    else
-		echo "No input - Retry <br>"
+	    fi
+	else
+	    echo "E-cash note was already submitted, please wait for mint to respond. <br>"
+	fi
+
+    elif [ $(echo -n "$voucher" | grep -ic "lnurl") -ge 1 ]; then
+
+	# Compute checksum of voucher and store in variable
+	checksum=$(echo -n "$voucher" | sha256sum | cut -d' ' -f1)
+
+	# Use checksum in filename
+	lnurlw_file="/tmp/lnurl_${clientmac}_${checksum}.md"
+        echo "$voucher" > "$lnurlw_file"
+
+	amount=1000
+	lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
+
+	response=$(/www/cgi-bin/./redeem_lnurlw.sh "$lnurlw_file" "$amount" "$lnurl")
+	# {"status":"OK", "paid_amount":256000}
+	# echo "$response" >> /tmp/lnurlwpaid.md
+
+	if [[ -n "$response" ]]; then
+	    status=$(echo "$response" | jq -r '.status' 2>/dev/null)
+            paid_amount=$(echo "$response" | jq -r '.paid_amount' 2>/dev/null)
+
+	    sats=$(($amount/1000))
+	    lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
+            response=$(/www/cgi-bin/./curl_request.sh "$ecash_file" "$lnurl")
+
+	    # echo "minutes: $minutes" >> /tmp/lnurlwpaid.md
+
+	    if [[ "$status" == "OK" && -n "$paid_amount" ]]; then
+		/root/./pricing.sh "$sats" "$checksum"
+		kb_allocation=$(jq -r '.kb_allocation' "/tmp/stack_growth_${checksum}.json")
+		
+		# echo "$status" >> /tmp/lnurlwpaid.md
+		current_time=$(date +%s)
+		upload_rate=0
+		download_rate=0
+		upload_quota=0
+		download_quota=$kb_allocation
+		session_length=1440
+
+		/root/./manage_lnurlws.sh $clientmac $voucher
+
+		# Log the new temporary voucher
+		echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
+		return 0
+            else
+		echo "Error parsing JSON or invalid response" >> /tmp/lnurlwpaid.md
 		return 1
 	    fi
-
-	    
+	else
+	    echo "Empty response from redeem_lnurlw.sh - Retry <br>"
+            echo "Empty response from redeem_lnurlw.sh" >> /tmp/lnurlwpaid.md
+	    return 1
 	fi
-	
-	# Should not get here
+    else
+	echo "No input - Retry <br>"
 	return 1
+    fi
+    
+    # Should not get here
+    return 1
 }
 
 voucher_validation() {
