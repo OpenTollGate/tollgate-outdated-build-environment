@@ -194,7 +194,7 @@ setup_wifi() {
             
             # Attempt to pay for internet access
             echo "Attempting to pay for internet access..."
-            if ! /root/./pay_portal.sh "$lnurlw_ecash"; then
+            if ! /root/./pagador.sh "$lnurlw_ecash"; then
                 echo "Payment failed. Please try again with a different LNURLw or e-cash string."
                 continue
             fi
@@ -361,8 +361,7 @@ EOF
 
 	# Prompt for margins with validation
 	while true; do
-	    echo -e "How big do you want to make your margins?\n"
-	    echo "(percentage between 0-100)"
+	    echo -e "How big do you want to make your margins?\n (percentage between 0-100)"
 	    read margins
 	    case "$margins" in
 		''|*[!0-9.]*) 

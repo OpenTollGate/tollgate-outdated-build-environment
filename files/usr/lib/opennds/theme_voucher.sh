@@ -372,22 +372,22 @@ voucher_form() {
     echo "
         <med-blue>
             Users must pay for their infrastructure! <br>
-            Currently $rate_display <br>
+            Currently <span id="rate_display">$rate_display</span> <br>
             If not you, then who? <br>
         </med-blue><br>
         <hr>
-        Your IP: $clientip <br>
-        Your MAC: $clientmac <br>
+        Your IP: <span id="client_ip">$clientip</span> <br>
+        Your MAC: <span id="client_mac">$clientmac</span> <br>
         <hr>
-        <form action=\"/opennds_preauth/\" method=\"get\">
-            <input type=\"hidden\" name=\"fas\" value=\"$fas\">
-            <input type=\"hidden\" name=\"tos\" value=\"accepted\">
+        <form id="payment_form" action="/opennds_preauth/" method="get">
+            <input type="hidden" name="fas" value="$fas">
+            <input type="hidden" name="tos" value="accepted">
             Purchased data must be used within 24 hours. <br>
             Only accepting notes from minibits.cash <br>
-            Pay here: <input type=\"text\" name=\"voucher\" value=\"$voucher_code\" required> <input type=\"submit\" value=\"Connect\" >
+            Pay here: <input type="text" id="voucher_input" name="voucher" value="$voucher_code" required> 
+            <input type="submit" id="connect_button" value="Connect">
         </form>
         <br>
-
         <hr>
     "
 
