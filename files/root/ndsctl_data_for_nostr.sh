@@ -1,14 +1,13 @@
 #!/bin/sh
 
 JSON_FILE="/tmp/pricing_inputs.json"
+/root/./save_ndsctl_data.sh
 
 # Check if file exists
 if [ ! -f "$JSON_FILE" ]; then
     echo "{\"error\": \"$JSON_FILE not found\"}"
     exit 1
 fi
-
-/root/./save_ndsctl_data.sh
 
 # Get current timestamp
 CURRENT_TIME=$(date +%s)
@@ -20,7 +19,11 @@ jq --arg current_time "$CURRENT_TIME" '
     "network_summary": {
         "authorized_clients": ([.clients[] | select(.state != "Preauthenticated")] | length),
         "total_downloads": ([.clients[] | select(.state != "Preauthenticated") | (.download_this_session | tonumber)] | add // 0),
-        "total_uploads": ([.clients[] | select(.state != "Preauthenticated") | (.upload_this_session | tonumber)] | add // 0)
+        "total_uploads": ([.clients[] | select(.state != "Preauthenticated") | (.upload_this_session | tonumber)] | add // 0),
+        "total_remaining_data": ([.clients[] | 
+            select(.download_quota != "null") | 
+            (.download_quota | tonumber) - ((.download_this_session | tonumber) + (.upload_this_session | tonumber))
+        ] | add // 0)
     },
     "client_details": [
         .clients[] | 

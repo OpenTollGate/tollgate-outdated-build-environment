@@ -133,45 +133,71 @@ check_voucher() {
             echo "$voucher" > "$ecash_file"
 	    echo "<p>The e-cash is being processed. Please wait...</p>"
 
-            # Make the curl request using the LNURL from user_inputs.json
-	    lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
-            response=$(/www/cgi-bin/./curl_request.sh "$ecash_file" "$lnurl")
+	    # Get payout method and required details
+	    payout_method=$(jq -r '.payout_method' /root/user_inputs.json)
+	    
+	    if [ "$payout_method" != "boardwalk" ] && [ "$payout_method" != "minibits" ]; then
+		echo "Invalid payout method specified. <br>"
+		return 1
+	    else
+		paid="notyet"
+		if [ "$payout_method" = "boardwalk" ]; then
+		    # Get username for Boardwalk
+		    username=$(jq -r '.payout_username' /root/user_inputs.json)
+		    
+		    # Use Boardwalk redeem script
+		    response=$(/www/cgi-bin/redeem_boardwalk.sh "$ecash_file" -u "$username")
+		    
+		    # Parse the JSON response
+		    paid=$(echo "$response" | jq -r '.status')
+		    if [ "$paid" = "success" ]; then
+			total_amount=$(echo "$response" | jq -r '.amountSats // 0')
+			echo "Redeemed $total_amount SATs successfully! <br>"
+		    else
+			echo "$response <br> <br>"
+		    fi
+		elif [ "$payout_method" = "minibits" ]; then
+		    # Get LNURL for Minibits
+		    lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
+		    response=$(/www/cgi-bin/./curl_request.sh "$ecash_file" "$lnurl")
 
-	    # Parse the JSON response and check if "paid" is true
-	    paid=$(echo "$response" | jq -r '.paid')
-	    if [ "$paid" = "true" ]; then
-		total_amount=$(echo "$response" | jq -r '.total_amount // 0')
-		echo "Redeemed $total_amount SATs successfully! <br>"
-
-		/root/./pricing.sh "$total_amount" "$checksum"
-		kb_allocation=$(jq -r '.kb_allocation' "/tmp/stack_growth_${checksum}.json")
-
-		if [ "$total_amount" -gt 0 ]; then
-                    current_time=$(date +%s)
-		    upload_rate=0
-		    download_rate=0
-		    upload_quota=0
-		    download_quota=$kb_allocation
-                    session_length=1440
-
-                    # Log the new temporary voucher
-		    echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
-                    return 0
+		    # Parse the JSON response and check if "paid" is true
+		    paid=$(echo "$response" | jq -r '.paid')
+		    if [ "$paid" = "true" ]; then
+			total_amount=$(echo "$response" | jq -r '.total_amount // 0')
+			echo "Redeemed $total_amount SATs successfully! <br>"
+		    else
+			echo "$response <br> <br>"
+		    fi
 		else
-		    echo "Failed to redeem e-cash note ${voucher}. <br>"
-		    echo "Response from mint: ${response} <br>"
-		    echo "Did you press the submit button twice? <br>"
-		    echo "Please report issues to the TollGate developers. <br>"
+		    echo "Invalid payout method specified. <br>"
 		    return 1
 		fi
-	    else
-		echo "Failed to redeem e-cash note ${voucher}. <br>"
-		echo "Response from mint ${response}. <br>"
-		echo "Did you press the submit button twice? <br>"
-		echo "Please report issues to the TollGate developers. <br>"
-		return 1
-	    fi
 
+		if [ "$paid" = "success" ] || [ "$paid" = "true" ]; then
+		    /root/./pricing.sh "$total_amount" "$checksum"
+		    kb_allocation=$(jq -r '.kb_allocation' "/tmp/stack_growth_${checksum}.json")
+
+		    if [ "$total_amount" -gt 0 ]; then
+			current_time=$(date +%s)
+			upload_rate=0
+			download_rate=0
+			upload_quota=0
+			download_quota=$kb_allocation
+			session_length=1440
+
+			# Log the new temporary voucher
+			echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
+			return 0
+		    else
+			echo "Failed to redeem e-cash note ${voucher}. <br>"
+			echo "Response from mint: ${response} <br>"
+			echo "Did you press the submit button twice? <br>"
+			echo "Please report issues to the TollGate developers. <br>"
+			return 1
+		    fi
+		fi
+	    fi
 	else
 	    echo "E-cash note was already submitted, please wait for mint to respond. <br>"
 	fi
@@ -185,20 +211,26 @@ check_voucher() {
 	lnurlw_file="/tmp/lnurl_${clientmac}_${checksum}.md"
         echo "$voucher" > "$lnurlw_file"
 
-	amount=1000
 	lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
 
+	if [[ "$lnurl" == "null" || -z "$lnurl" ]]; then
+	    echo "Error: TollGate operator needs to specify their LNURL to receive LNURLw payments."
+	    echo "Please add 'payout_lnurl' to /root/user_inputs.json <br>"
+	    return 1
+	fi
+
+	amount=1000
 	response=$(/www/cgi-bin/./redeem_lnurlw.sh "$lnurlw_file" "$amount" "$lnurl")
 	# {"status":"OK", "paid_amount":256000}
 	# echo "$response" >> /tmp/lnurlwpaid.md
 
 	if [[ -n "$response" ]]; then
 	    status=$(echo "$response" | jq -r '.status' 2>/dev/null)
-            paid_amount=$(echo "$response" | jq -r '.paid_amount' 2>/dev/null)
+	    paid_amount=$(echo "$response" | jq -r '.paid_amount' 2>/dev/null)
 
 	    sats=$(($amount/1000))
 	    lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
-            response=$(/www/cgi-bin/./curl_request.sh "$ecash_file" "$lnurl")
+	    response=$(/www/cgi-bin/./curl_request.sh "$ecash_file" "$lnurl")
 
 	    # echo "minutes: $minutes" >> /tmp/lnurlwpaid.md
 
@@ -219,13 +251,13 @@ check_voucher() {
 		# Log the new temporary voucher
 		echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
 		return 0
-            else
+	    else
 		echo "Error parsing JSON or invalid response" >> /tmp/lnurlwpaid.md
 		return 1
 	    fi
 	else
 	    echo "Empty response from redeem_lnurlw.sh - Retry <br>"
-            echo "Empty response from redeem_lnurlw.sh" >> /tmp/lnurlwpaid.md
+	    echo "Empty response from redeem_lnurlw.sh" >> /tmp/lnurlwpaid.md
 	    return 1
 	fi
     else
@@ -242,7 +274,7 @@ voucher_validation() {
 
     check_voucher
     if [ $? -eq 0 ]; then
-	#echo "Voucher is Valid, click Continue to finish login<br>"
+	#echo "Voucher is Valid, click continue to finish login<br>"
 
 	# Refresh quotas with ones imported from the voucher roll.
 	quotas="$session_length $upload_rate $download_rate $upload_quota $download_quota"
@@ -252,13 +284,18 @@ voucher_validation() {
 	# Authenticate and write to the log - returns with $ndsstatus set
 	auth_log
 
+	
+	# Run select_unit.sh with argument and parse the JSON output with jq
+	selected_size=$(/root/./select_unit.sh $download_quota | jq -r '.select')
+
+
 	# output the landing page - note many CPD implementations will close as soon as Internet access is detected
 	# The client may not see this page, or only see it briefly
 	auth_success="
 			<p>
 				<hr>
 			</p>
-			Granted $download_quota kilobytes of internet access.
+			Granted $selected_size of internet access.
 			<hr>
 			<p>
 				<italic-black>
@@ -332,28 +369,36 @@ voucher_form() {
     # Store the entire JSON output in a variable
     rates_json=$(/root/./calculate_rates.sh)
 
-    # Extract sats_per_mb value using jq
+    # Extract both values using jq
     sats_per_mb=$(echo "$rates_json" | jq -r '.sats_per_mb')
+    mb_per_sat=$(echo "$rates_json" | jq -r '.mb_per_sat')
 
+    if [ "$(awk 'BEGIN {print ('$sats_per_mb' > 1)}')" -eq 1 ]; then
+	rate_display="charging $sats_per_mb SAT/MB"
+    else
+	rate_display="offering $mb_per_sat MB/SAT"
+    fi
+    
     echo "
         <med-blue>
             Users must pay for their infrastructure! <br>
-            Currently charging $sats_per_mb SAT/MB <br>
+            Currently <span id="rate_display">$rate_display</span> <br>
             If not you, then who? <br>
         </med-blue><br>
         <hr>
-        Your IP: $clientip <br>
-        Your MAC: $clientmac <br>
+        Your IP: <span id="client_ip">$clientip</span> <br>
+        Your MAC: <span id="client_mac">$clientmac</span> <br>
         <hr>
-        <form action=\"/opennds_preauth/\" method=\"get\">
-            <input type=\"hidden\" name=\"fas\" value=\"$fas\">
-            <input type=\"hidden\" name=\"tos\" value=\"accepted\">
+        <form id="payment_form" action="/opennds_preauth/" method="get">
+            <input type="hidden" name="fas" value="$fas">
+            <input type="hidden" name="tos" value="accepted">
+            Purchased data must be used within 24 hours. <br>
             Only accepting notes from minibits.cash <br>
-            Pay here: <input type=\"text\" name=\"voucher\" value=\"$voucher_code\" required> <input type=\"submit\" value=\"Connect\" >
+            Pay here: <input type="text" id="voucher_input" name="voucher" value="$voucher_code"> 
+            <input type="submit" id="connect_button" value="Connect">
         </form>
         <br>
-
-	<hr>
+        <hr>
     "
 
     footer

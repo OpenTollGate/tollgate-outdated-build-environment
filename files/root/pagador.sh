@@ -10,7 +10,7 @@ get_portal_params() {
     GATEWAY_IP=$(echo "$STA_IP" | sed 's/\.[0-9]*$/.1/')
 
     RESPONSE=$(curl -s -L "http://status.client:2050")
-    FAS_VALUE=$(echo "$RESPONSE" | grep -o 'name="fas" value="[^"]*"' | cut -d'"' -f4)
+    FAS_VALUE=$(echo "$RESPONSE" | grep -o 'name=fas value=[^ ]*' | cut -d'=' -f3)
     PORTAL_URL="http://status.client:2050/opennds_preauth/?fas=${FAS_VALUE}&tos=accepted&voucher=$1"
 
     if [ -z "$PORTAL_URL" ]; then
@@ -18,8 +18,8 @@ get_portal_params() {
         exit 1
     fi
 
-    # Extract the 'fas' parameter from hidden input field - removed -P option
-    FAS_PARAM=$(echo "$RESPONSE" | grep -o 'name="fas" value="[^"]*"' | cut -d'"' -f4)
+    # Extract the 'fas' parameter from hidden input field
+    FAS_PARAM=$(echo "$RESPONSE" | grep -o 'name=fas value=[^ ]*' | cut -d'=' -f3)
 
     if [ -z "$FAS_PARAM" ]; then
         echo "Failed to extract fas parameter"
@@ -33,7 +33,7 @@ get_portal_params() {
 
 # Check if a voucher code is provided
 if [ -z "$1" ]; then
-    echo "Usage: $0 <voucher_code>"
+    echo "Usage: $0 <ecash_note>"
     exit 1
 fi
 
