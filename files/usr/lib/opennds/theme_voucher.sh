@@ -153,6 +153,8 @@ check_voucher() {
 		    if [ "$paid" = "success" ]; then
 			total_amount=$(echo "$response" | jq -r '.amountSats // 0')
 			echo "Redeemed $total_amount SATs successfully! <br>"
+		    else
+			echo "$response <br> <br>"
 		    fi
 		elif [ "$payout_method" = "minibits" ]; then
 		    # Get LNURL for Minibits
@@ -164,6 +166,8 @@ check_voucher() {
 		    if [ "$paid" = "true" ]; then
 			total_amount=$(echo "$response" | jq -r '.total_amount // 0')
 			echo "Redeemed $total_amount SATs successfully! <br>"
+		    else
+			echo "$response <br> <br>"
 		    fi
 		else
 		    echo "Invalid payout method specified. <br>"
@@ -207,20 +211,26 @@ check_voucher() {
 	lnurlw_file="/tmp/lnurl_${clientmac}_${checksum}.md"
         echo "$voucher" > "$lnurlw_file"
 
-	amount=1000
 	lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
 
+	if [[ "$lnurl" == "null" || -z "$lnurl" ]]; then
+	    echo "Error: TollGate operator needs to specify their LNURL to receive LNURLw payments."
+	    echo "Please add 'payout_lnurl' to /root/user_inputs.json <br>"
+	    return 1
+	fi
+
+	amount=1000
 	response=$(/www/cgi-bin/./redeem_lnurlw.sh "$lnurlw_file" "$amount" "$lnurl")
 	# {"status":"OK", "paid_amount":256000}
 	# echo "$response" >> /tmp/lnurlwpaid.md
 
 	if [[ -n "$response" ]]; then
 	    status=$(echo "$response" | jq -r '.status' 2>/dev/null)
-            paid_amount=$(echo "$response" | jq -r '.paid_amount' 2>/dev/null)
+	    paid_amount=$(echo "$response" | jq -r '.paid_amount' 2>/dev/null)
 
 	    sats=$(($amount/1000))
 	    lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
-            response=$(/www/cgi-bin/./curl_request.sh "$ecash_file" "$lnurl")
+	    response=$(/www/cgi-bin/./curl_request.sh "$ecash_file" "$lnurl")
 
 	    # echo "minutes: $minutes" >> /tmp/lnurlwpaid.md
 
@@ -241,13 +251,13 @@ check_voucher() {
 		# Log the new temporary voucher
 		echo ${voucher},${upload_rate},${download_rate},${upload_quota},${download_quota},${session_length},${current_time} >> $voucher_roll
 		return 0
-            else
+	    else
 		echo "Error parsing JSON or invalid response" >> /tmp/lnurlwpaid.md
 		return 1
 	    fi
 	else
 	    echo "Empty response from redeem_lnurlw.sh - Retry <br>"
-            echo "Empty response from redeem_lnurlw.sh" >> /tmp/lnurlwpaid.md
+	    echo "Empty response from redeem_lnurlw.sh" >> /tmp/lnurlwpaid.md
 	    return 1
 	fi
     else
@@ -264,7 +274,7 @@ voucher_validation() {
 
     check_voucher
     if [ $? -eq 0 ]; then
-	#echo "Voucher is Valid, click Continue to finish login<br>"
+	#echo "Voucher is Valid, click continue to finish login<br>"
 
 	# Refresh quotas with ones imported from the voucher roll.
 	quotas="$session_length $upload_rate $download_rate $upload_quota $download_quota"
@@ -384,7 +394,7 @@ voucher_form() {
             <input type="hidden" name="tos" value="accepted">
             Purchased data must be used within 24 hours. <br>
             Only accepting notes from minibits.cash <br>
-            Pay here: <input type="text" id="voucher_input" name="voucher" value="$voucher_code" required> 
+            Pay here: <input type="text" id="voucher_input" name="voucher" value="$voucher_code"> 
             <input type="submit" id="connect_button" value="Connect">
         </form>
         <br>
