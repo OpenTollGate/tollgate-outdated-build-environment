@@ -42,6 +42,10 @@ contribution_sats=$(printf "%d" "0x$contribution_hex")
 mb_allocation=$(awk "BEGIN {printf \"%.3f\", $kb_allocation/1024}")
 gb_allocation=$(awk "BEGIN {printf \"%.3f\", $kb_allocation/1024/1024}")
 
+# Calculate decibel values
+kb_allocation_db=$(./decibel.sh $kb_allocation)
+contribution_sats_db=$(./decibel.sh $contribution_sats)
+
 # Output JSON
 cat << EOF
 {
@@ -51,9 +55,11 @@ cat << EOF
         "oui": "$oui",
         "type": "$type",
         "kb_allocation": $kb_allocation,
+        "kb_allocation_db": $kb_allocation_db,
         "mb_allocation": $mb_allocation,
         "gb_allocation": $gb_allocation,
-        "contribution_sats": $contribution_sats
+        "contribution_sats": $contribution_sats,
+        "contribution_sats_db": $contribution_sats_db
     }
 }
 EOF
