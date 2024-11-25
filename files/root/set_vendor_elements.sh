@@ -2,15 +2,15 @@
 
 # Function to find wireless interface
 get_wifi_interface() {
-    # Get the first wireless interface name from UCI config
-    uci show wireless | grep "wifi-iface" | head -n1 | cut -d. -f1-2
+    # Get the name of the AP interface
+    uci show wireless | grep "mode='ap'" | head -n1 | cut -d. -f1,2 | sed "s/'//g"
 }
 
 # Get wireless interface
 WIFI_IF=$(get_wifi_interface)
 
 if [ -z "$WIFI_IF" ]; then
-    echo "Error: No wireless interface found"
+    echo "Error: No wireless AP interface found"
     exit 1
 fi
 
@@ -88,8 +88,10 @@ length=$(calc_length "$payload")
 # Construct final vendor elements string
 vendor_elements="dd${length}${payload}"
 
-# Set the wireless config
+# Set the wireless config correctly
+uci -q delete ${WIFI_IF}.vendor_elements
 uci set ${WIFI_IF}.vendor_elements="$vendor_elements"
+#uci rename wireless.@wifi-iface ^0^ ="default_radio0"  # Ensure section name is correct
 uci commit wireless
 wifi reload
 
