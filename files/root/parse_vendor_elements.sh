@@ -21,12 +21,17 @@ if ! echo "$hex" | grep -Eq '^[0-9A-Fa-f]+$'; then
     usage
 fi
 
-# Extract components using sed
-length_hex=$(echo "$hex" | sed 's/^dd$..$.*/\1/')
-oui=$(echo "$hex" | sed 's/^dd..$...$.*/\1/')
-type=$(echo "$hex" | sed 's/^dd..$....$..$.*$/\2/' | cut -c1-2)
-kb_allocation_hex=$(echo "$hex" | sed 's/^dd..$....$..$.*$/\2/' | cut -c3-10)
-contribution_hex=$(echo "$hex" | sed 's/^dd..$....$..$.*$/\2/' | cut -c11-18)
+# Extract components
+# Skip first 2 chars (dd), take next 2 for length
+length_hex=$(echo "$hex" | dd bs=1 skip=2 count=2 2>/dev/null)
+# Skip first 4 chars, take next 6 for OUI
+oui=$(echo "$hex" | dd bs=1 skip=4 count=6 2>/dev/null)
+# Skip first 10 chars, take next 2 for type
+type=$(echo "$hex" | dd bs=1 skip=10 count=2 2>/dev/null)
+# Skip first 12 chars, take next 8 for kb_allocation
+kb_allocation_hex=$(echo "$hex" | dd bs=1 skip=12 count=8 2>/dev/null)
+# Skip first 20 chars, take next 8 for contribution
+contribution_hex=$(echo "$hex" | dd bs=1 skip=20 count=8 2>/dev/null)
 
 # Convert hex to decimal
 length=$(printf "%d" "0x$length_hex")
