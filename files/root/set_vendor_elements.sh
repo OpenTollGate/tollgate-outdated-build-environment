@@ -22,7 +22,7 @@ usage() {
     echo "Example: $0 000000 01"
     echo "  OUI: 6-digit hex Organization Unique Identifier"
     echo "  TYPE: 2-digit hex message type"
-    echo "Price will be automatically read from /tmp/moscow_time.json"
+    echo "Values will be automatically calculated using pricing.sh"
     exit 1
 }
 
@@ -35,16 +35,20 @@ fi
 OUI="$1"
 TYPE="$2"
 
-# Read price from JSON file
-if [ ! -f "/tmp/moscow_time.json" ]; then
-    echo "Error: /tmp/moscow_time.json not found"
+# Call pricing.sh to generate values
+/root/./pricing.sh 1024 vendor_elements
+
+# Read values from JSON file
+if [ ! -f "/tmp/stack_growth_vendor_elements.json" ]; then
+    echo "Error: /tmp/stack_growth_vendor_elements.json not found"
     exit 1
 fi
 
-PRICE_SATS=$(jq -r '.sats_per_dollar' /tmp/moscow_time.json | awk '{printf "%.0f", $1}')
+KB_ALLOCATION=$(jq -r '.kb_allocation' /tmp/stack_growth_vendor_elements.json | awk '{printf "%.0f", $1}')
+CONTRIBUTION_SATS=$(jq -r '.contribution_sats' /tmp/stack_growth_vendor_elements.json | awk '{printf "%.0f", $1}')
 
-if [ -z "$PRICE_SATS" ] || [ "$PRICE_SATS" = "null" ]; then
-    echo "Error: Failed to read sats_per_dollar from JSON file"
+if [ -z "$KB_ALLOCATION" ] || [ "$KB_ALLOCATION" = "null" ] || [ -z "$CONTRIBUTION_SATS" ] || [ "$CONTRIBUTION_SATS" = "null" ]; then
+    echo "Error: Failed to read values from JSON file"
     exit 1
 fi
 
@@ -56,11 +60,6 @@ fi
 
 if ! echo "$TYPE" | grep -Eq '^[0-9A-Fa-f]{2}$'; then
     echo "Error: TYPE must be 2 hex digits"
-    usage
-fi
-
-if ! echo "$PRICE_SATS" | grep -Eq '^[0-9]+$'; then
-    echo "Error: Failed to get valid PRICE_SATS value"
     usage
 fi
 
@@ -76,11 +75,12 @@ calc_length() {
     printf "%02x" "$total_bytes"
 }
 
-# Convert price to hex
-price_hex=$(dec2hex $PRICE_SATS)
+# Convert values to hex
+kb_allocation_hex=$(dec2hex $KB_ALLOCATION)
+contribution_hex=$(dec2hex $CONTRIBUTION_SATS)
 
-# Construct data payload
-payload="${OUI}${TYPE}${price_hex}"
+# Construct data payload - now includes both values
+payload="${OUI}${TYPE}${kb_allocation_hex}${contribution_hex}"
 
 # Calculate length
 length=$(calc_length "$payload")
@@ -94,6 +94,7 @@ uci commit wireless
 wifi reload
 
 # Print for verification
-echo "Price set to $PRICE_SATS satoshis"
+echo "KB Allocation: $KB_ALLOCATION"
+echo "Contribution SATs: $CONTRIBUTION_SATS"
 echo "Vendor elements string: $vendor_elements"
 
