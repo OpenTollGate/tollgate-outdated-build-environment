@@ -94,6 +94,7 @@ uci commit wireless
 wifi reload
 
 # Print for verification
+echo "In case of 1024 sat purchase"
 echo "KB Allocation: $KB_ALLOCATION"
 echo "Contribution SATs: $CONTRIBUTION_SATS"
 echo "Vendor elements string: $vendor_elements"

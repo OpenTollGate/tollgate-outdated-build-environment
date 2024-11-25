@@ -17,7 +17,8 @@ calculate_sats_per_dollar() {
 save_json() {
     btc_price=$1
     sats_per_dollar=$2
-    echo "{\"btc_price\": $btc_price, \"sats_per_dollar\": $sats_per_dollar}" | jq > /tmp/moscow_time.json
+    sats_per_dollar_db=$(./decibel.sh $sats_per_dollar)
+    echo "{\"btc_price\": $btc_price, \"sats_per_dollar\": $sats_per_dollar, \"sats_per_dollar_db\": $sats_per_dollar_db}" | jq > /tmp/moscow_time.json
     /root/./set_vendor_elements.sh 212121 01
 }
 
@@ -59,5 +60,3 @@ esac
 
 echo "Failed to get price from any endpoint" >&2
 exit 1
-
-
