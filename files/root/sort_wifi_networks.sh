@@ -27,6 +27,14 @@ remove_duplicate_ssids() {
     '
 }
 
+# Filter for TollGate SSIDs
+filter_tollgate_ssids() {
+    local json_input="$1"
+    echo "$json_input" | jq -r '
+        map(select(.ssid | startswith("TollGate_")))
+    '
+}
+
 # Capture, sort, and display the full JSON data
 sort_and_display_full_json() {
     local scan_script_output
@@ -92,6 +100,11 @@ main() {
         --full-json)
             sort_and_display_full_json
             ;;
+        --tollgate-json)
+            local sorted_json
+            sorted_json=$(sort_and_display_full_json)
+            filter_tollgate_ssids "$sorted_json"
+            ;;
         --ssid-list)
             local sorted_json
             sorted_json=$(sort_and_display_full_json)
@@ -101,7 +114,7 @@ main() {
             select_ssid
             ;;
         *)
-            echo "Usage: $0 [--full-json | --ssid-list | --select-ssid]"
+            echo "Usage: $0 [--full-json | --tollgate-json | --ssid-list | --select-ssid]"
             return 1
             ;;
     esac

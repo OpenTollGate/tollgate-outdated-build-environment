@@ -40,6 +40,7 @@ if [ -d "$SCRIPT_DIR/files" ]; then
     mkdir -p "$OPENWRT_DIR/files/etc/rc.d"
     mkdir -p "$OPENWRT_DIR/files/etc"
     mkdir -p "$OPENWRT_DIR/files/root"
+    mkdir -p "$OPENWRT_DIR/files/nostr/shell"
 
     cp "$SCRIPT_DIR/files/vpn/pia_latvia.ovpn" "$OPENWRT_DIR/files/etc/openvpn/"
     cp "$SCRIPT_DIR/files/vpn/firewall.user" "$OPENWRT_DIR/files/etc/"
@@ -53,6 +54,10 @@ if [ -d "$SCRIPT_DIR/files" ]; then
 
     # /root/ contains: create_gateway.sh, activate_tollgate.sh,
     # deactivate_tollgate.sh, setup_vpn.sh, startup_vpn.sh
+
+    cp -r "$SCRIPT_DIR/files/nostr/shell/"* "$OPENWRT_DIR/files/nostr/shell/."
+    find "$OPENWRT_DIR/files/nostr/shell" -name "*.sh" -type f -exec chmod +x {} \;
+    find "$OPENWRT_DIR/files/nostr/shell/install" -name "*.sh" -type f -exec chmod +x {} \;
     
     cp "$SCRIPT_DIR/files/usr/local/bin/first-login-setup" "$OPENWRT_DIR/files/usr/local/bin/"
     chmod +x "$OPENWRT_DIR/files/usr/local/bin/first-login-setup"
