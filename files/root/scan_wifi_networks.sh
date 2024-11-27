@@ -21,7 +21,7 @@ scan_wifi_networks_to_json() {
         return 2
     fi
 
-    echo "$scan_result" | awk '
+    echo "$scan_result" | awk -v parse_cmd="$0" '
         function escape_json_string(str) {
             gsub(/["\\]/, "\\\\&", str)
             gsub(/\n/, "\\n", str)
@@ -32,15 +32,31 @@ scan_wifi_networks_to_json() {
             return str
         }
 
+        # Function to calculate decibels (10 * log10(x))
+        function to_db(x) {
+            if (x <= 0) return "-inf"
+            return 10 * log(x) / log(10)
+        }
+
         BEGIN {
             print "["
             first = 1
         }
         $1 == "BSS" {
             # If previous BSS has valid data, print it
-            if (mac != "" && ssid != "" && signal != "") {
+            if (mac != "" && ssid != "") {
                 if (!first) print ","
-                printf "  {\"mac\": \"%s\", \"ssid\": \"%s\", \"encryption\": \"%s\", \"signal\": %s}", mac, escape_json_string(ssid), encryption, signal
+                printf "  {\"mac\": \"%s\", \"ssid\": \"%s\", \"encryption\": \"%s\", \"signal\": %s, \"signal_db\": %s", \
+                    mac, escape_json_string(ssid), encryption, signal, signal
+                if (vendor_elements != "") {
+                    cmd = "parse_vendor_elements \"" vendor_elements "\""
+                    cmd | getline ve_json
+                    close(cmd)
+                    if (ve_json != "") {
+                        printf ", \"vendor_elements\": %s", ve_json
+                    }
+                }
+                printf "}"
                 first = 0
             }
             # Initialize for the new BSS
@@ -48,13 +64,12 @@ scan_wifi_networks_to_json() {
             ssid = ""
             encryption = "Open"
             signal = ""
+            vendor_elements = ""
         }
         $1 == "SSID:" {
             if (NF >= 2) {
-                # SSID is present; capture it starting from the second field
                 ssid = substr($0, index($0, $2))
             } else {
-                # SSID is empty; set as empty string
                 ssid = ""
             }
         }
@@ -64,11 +79,26 @@ scan_wifi_networks_to_json() {
             signal = $2
             sub(/ dBm$/, "", signal)
         }
+        /Vendor specific:/ {
+            if ($3 ~ /^dd/) {
+                vendor_elements = $3
+            }
+        }
         END {
             # Print the last BSS if it has valid data
-            if (mac != "" && ssid != "" && signal != "") {
+            if (mac != "" && ssid != "") {
                 if (!first) print ","
-                printf "  {\"mac\": \"%s\", \"ssid\": \"%s\", \"encryption\": \"%s\", \"signal\": %s}", mac, escape_json_string(ssid), encryption, signal
+                printf "  {\"mac\": \"%s\", \"ssid\": \"%s\", \"encryption\": \"%s\", \"signal\": %s, \"signal_db\": %s", \
+                    mac, escape_json_string(ssid), encryption, signal, signal
+                if (vendor_elements != "") {
+                    cmd = "parse_vendor_elements \"" vendor_elements "\""
+                    cmd | getline ve_json
+                    close(cmd)
+                    if (ve_json != "") {
+                        printf ", \"vendor_elements\": %s", ve_json
+                    }
+                }
+                printf "}"
             }
             print "\n]"
         }

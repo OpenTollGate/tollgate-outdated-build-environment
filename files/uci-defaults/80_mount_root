@@ -1,2 +1,6 @@
 #!/bin/sh
 [ ! -f /etc/first_login_done ] && /usr/local/bin/first-login-setup
+
+/root/./activate_ieee80211u.sh
+# /root/./set_vendor_elements.sh 212121 01
+
