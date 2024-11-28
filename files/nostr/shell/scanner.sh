@@ -14,5 +14,5 @@ echo "Purser: $purser"
 
 while :
 do
-    ./process_auth.sh $relay $purser
+    /nostr/shell/./process_auth.sh $relay $purser
 done

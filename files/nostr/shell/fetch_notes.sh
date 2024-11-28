@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Ensure RelayLink is installed and ready to use
-./install/install_relay_link.sh
+/nostr/shell/./install/install_relay_link.sh
 
 # Check if the correct number of arguments is provided
 if [ "$#" -ne 2 ]; then

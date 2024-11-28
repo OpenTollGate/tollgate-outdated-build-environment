@@ -14,7 +14,7 @@ echo "Purser: $purser"
 # wss://tollbooth.stens.dev a057f743eca9efe9c97e6358bf2b37b05349029edfaa1a5e6e0c117fc95b9114
 
 # Get the latest authorization event
-auth_event=$(./get_latest_authorize.sh $relay $purser)
+auth_event=$(/nostr/shell/./get_latest_authorize.sh $relay $purser)
 
 # Check if auth_event is empty
 if [ -z "$auth_event" ]; then
@@ -34,7 +34,7 @@ if [ ! -f "$filename" ]; then
     printf '%s\n' "$auth_event" > "$filename"
     echo "Stored new event in $filename"
 
-    ./authenticate_mac.sh $filename
+    /nostr/shell/./authenticate_mac.sh $filename
     
 else
     echo "Event already processed (file $filename exists)"

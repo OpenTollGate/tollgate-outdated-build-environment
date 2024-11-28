@@ -6,7 +6,7 @@ get_latest_event() {
     local pubkey=$2
     
     # Run fetch_notes.sh and capture output, redirect stderr to /dev/null
-    output=$(./fetch_notes.sh "$relay" "$pubkey" 2>/dev/null)
+    output=$(/nostr/shell/./fetch_notes.sh "$relay" "$pubkey" 2>/dev/null)
     
     # Extract EVENT lines, get the most recent one
     latest=$(echo "$output" | grep '^\["EVENT"' | sort -r | head -n 1)
