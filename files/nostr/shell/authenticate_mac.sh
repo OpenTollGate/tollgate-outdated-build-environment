@@ -13,12 +13,31 @@ if [ ! -f "$1" ]; then
 fi
 
 # Read the file content and extract MAC address using jq
-mac=$(jq -r '. ^2^ .tags[] | select(. ^0^  == "mac") ^1^ ' "$1")
+mac=$(jq -r '.tags[] | select(.[0] == "mac") [1] ' "$1")
+end_time=$(jq -r '.tags[] | select(.[0] == "session-end") [1] ' "$1")
 
 # Check if MAC address was found
 if [ -n "$mac" ]; then
     # Execute ndsctl auth with the MAC address
-    ndsctl auth "$mac"
+    # Get current unix timestamp
+    now=$(date +%s)
+    # Calculate duration
+    duration=$((end_time - now))
+    duration_minutes=$(( ($duration / 60) + ($duration % 60 > 0) ))
+
+    echo "now: $now"
+    echo "end_time: $end_time"
+    echo "duration: $duration"
+    # Authorize with calculated duration
+    if [ $duration -lt 0 ]; then
+	echo "Duration must be a postive number"
+    elif [ $duration -lt 60 ]; then
+	echo "Duration must be atleast a minute!"
+	ndsctl auth "74:a6:cd:cc:ef:e0" 1
+    else
+	ndsctl auth "74:a6:cd:cc:ef:e0" $duration
+    fi
+	
     echo "Authenticated MAC address: $mac"
 else
     echo "Error: Could not extract MAC address from file"
