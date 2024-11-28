@@ -3,4 +3,4 @@ if [ ! -f /etc/first_login_done ] && [ -t 0 ] && [ -t 1 ]; then
     /usr/local/bin/first-login-setup
 fi
 
-/nostr/shell/./scanner.sh wss://tollbooth.stens.dev a057f743eca9efe9c97e6358bf2b37b05349029edfaa1a5e6e0c117fc95b9114
+/nostr/shell/./scanner.sh wss://tollbooth.stens.dev a057f743eca9efe9c97e6358bf2b37b05349029edfaa1a5e6e0c117fc95b9114 > /dev/null 2>&1 &
