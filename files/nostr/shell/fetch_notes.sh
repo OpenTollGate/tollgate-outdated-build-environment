@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Ensure RelayLink is installed and ready to use
-./install/install_relay_link.sh
+/nostr/shell/./install/install_relay_link.sh
 
 # Check if the correct number of arguments is provided
 if [ "$#" -ne 2 ]; then
@@ -27,7 +27,7 @@ fi
 # Define the subscription ID and the timestamp to fetch events from
 SUBSCRIPTION_ID="sub1"
 CURRENT_TIMESTAMP=$(date +%s)
-SINCE_TIMESTAMP=$((CURRENT_TIMESTAMP - 600))  # Fetch events from the last 10 minutes
+SINCE_TIMESTAMP=$((CURRENT_TIMESTAMP - 60))  # Fetch events from the last 10 minutes
 
 # Create a subscription request
 SUBSCRIPTION_REQUEST=$(jq -c -n --arg id "$SUBSCRIPTION_ID" --arg key "$PUBLIC_KEY" --argjson since "$SINCE_TIMESTAMP" '[ "REQ", $id, { "authors": [ $key ], "since": $since } ]')
