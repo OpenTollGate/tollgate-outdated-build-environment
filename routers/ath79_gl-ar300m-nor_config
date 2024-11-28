@@ -5674,7 +5674,7 @@ CONFIG_PACKAGE_lighttpd-mod-proxy=y
 # CONFIG_PACKAGE_lighttpd-mod-webdav is not set
 # CONFIG_PACKAGE_lighttpd-mod-webdav_min is not set
 # CONFIG_PACKAGE_lighttpd-mod-wolfssl is not set
-CONFIG_PACKAGE_lighttpd-mod-wstunnel=y
+# CONFIG_PACKAGE_lighttpd-mod-wstunnel is not set
 # CONFIG_PACKAGE_microsocks is not set
 # CONFIG_PACKAGE_nginx-full is not set
 # CONFIG_PACKAGE_nginx-mod-brotli is not set
