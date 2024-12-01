@@ -5,7 +5,7 @@
 # ./redeem.sh token.txt -u user-86f52
 # ./redeem.sh token.txt -l user@lightning.address
 
-BOARDWALK_ENDPOINT="https://boardwalk-git-feat-post-token-makeprisms.vercel.app"
+BOARDWALK_ENDPOINT="https://boardwalkcash.com"
 CHANGE_FILE="/root/changeTokens.json"
 
 # Create change file if it doesn't exist
