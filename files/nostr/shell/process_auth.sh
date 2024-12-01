@@ -9,8 +9,8 @@ if [ -z "$1" ] || [ -z "$2" ]; then
 fi
 
 
-echo "Relay: $relay"
-echo "Purser: $purser"
+# echo "Relay: $relay"
+# echo "Purser: $purser"
 # wss://tollbooth.stens.dev a057f743eca9efe9c97e6358bf2b37b05349029edfaa1a5e6e0c117fc95b9114
 
 # Get the latest authorization event

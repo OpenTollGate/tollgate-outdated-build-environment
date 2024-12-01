@@ -373,12 +373,22 @@ voucher_form() {
     sats_per_mb=$(echo "$rates_json" | jq -r '.sats_per_mb')
     mb_per_sat=$(echo "$rates_json" | jq -r '.mb_per_sat')
 
+    # Get payout method from user_inputs.json
+    payout_method=$(jq -r '.payout_method' /root/user_inputs.json)
+
     if [ "$(awk 'BEGIN {print ('$sats_per_mb' > 1)}')" -eq 1 ]; then
 	rate_display="charging $sats_per_mb SAT/MB"
     else
 	rate_display="offering $mb_per_sat MB/SAT"
     fi
     
+    # Set message based on payout method
+    if [ "$payout_method" = "boardwalk" ]; then
+        payment_message="Accepting cashu notes from any mint"
+    else
+        payment_message="Accepting cashuA notes from mint.minibits.cash"
+    fi
+
     echo "
         <med-blue>
             Users must pay for their infrastructure! <br>
@@ -393,7 +403,7 @@ voucher_form() {
             <input type="hidden" name="fas" value="$fas">
             <input type="hidden" name="tos" value="accepted">
             Purchased data must be used within 24 hours. <br>
-            Only accepting notes from minibits.cash <br>
+            $payment_message <br>
             Pay here: <input type="text" id="voucher_input" name="voucher" value="$voucher_code"> 
             <input type="submit" id="connect_button" value="Connect">
         </form>

@@ -25,21 +25,21 @@ if [ -n "$mac" ]; then
     duration=$((end_time - now))
     duration_minutes=$(( ($duration / 60) + ($duration % 60 > 0) ))
 
-    echo "now: $now"
-    echo "end_time: $end_time"
-    echo "duration: $duration"
+    echo "now: $now" >> /tmp/nostr_autenticate.md
+    echo "end_time: $end_time" >> /tmp/nostr_autenticate.md
+    echo "duration: $duration" >> /tmp/nostr_autenticate.md
     # Authorize with calculated duration
     if [ $duration -lt 0 ]; then
-	echo "Duration must be a postive number"
+	echo "Duration must be a postive number" >> /tmp/nostr_autenticate.md
     elif [ $duration -lt 60 ]; then
-	echo "Duration must be atleast a minute!"
+	echo "Duration must be atleast a minute!" >> /tmp/nostr_autenticate.md
 	ndsctl auth "74:a6:cd:cc:ef:e0" 1
     else
 	ndsctl auth "74:a6:cd:cc:ef:e0" $duration
     fi
 	
-    echo "Authenticated MAC address: $mac"
+    echo "Authenticated MAC address: $mac" >> /tmp/nostr_autenticate.md
 else
-    echo "Error: Could not extract MAC address from file"
+    echo "Error: Could not extract MAC address from file" >> /tmp/nostr_autenticate.md
     exit 1
 fi
