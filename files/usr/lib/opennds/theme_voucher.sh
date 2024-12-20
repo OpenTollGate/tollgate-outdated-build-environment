@@ -228,6 +228,7 @@ check_voucher() {
 	    status=$(echo "$response" | jq -r '.status' 2>/dev/null)
 	    paid_amount=$(echo "$response" | jq -r '.paid_amount' 2>/dev/null)
 
+	    
 	    sats=$(($amount/1000))
 	    lnurl=$(jq -r '.payout_lnurl' /root/user_inputs.json)
 	    response=$(/www/cgi-bin/./curl_request.sh "$ecash_file" "$lnurl")

@@ -70,8 +70,8 @@ dec2hex() {
 
 # Function to calculate length of payload in hex (2 digits)
 calc_length() {
-    # 3 bytes OUI + 1 byte type + length of data in bytes
-    total_bytes=$((3 + 1 + $(echo -n "$1" | wc -c) / 2))
+    # Length is the number of bytes in the payload
+    total_bytes=$(( $(echo -n "$1" | wc -c) / 2))
     printf "%02x" "$total_bytes"
 }
 

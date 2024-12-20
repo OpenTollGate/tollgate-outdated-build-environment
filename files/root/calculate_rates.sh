@@ -1,8 +1,10 @@
 #!/bin/sh
 
-if [ ! -f /tmp/moscow_time.json ] || ! grep -q "sats_per_dollar" /tmp/moscow_time.json; then
-    /root/./get_moscow_time.sh
-fi
+# if [ ! -f /tmp/moscow_time.json ]; then
+#     /root/./get_moscow_time.sh
+# fi
+
+/root/./get_moscow_time.sh
 
 # Read values from files
 fiat_price=$(jq -r '.fiat_price' /root/user_inputs.json)

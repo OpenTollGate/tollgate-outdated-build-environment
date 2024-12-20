@@ -19,7 +19,7 @@ save_json() {
     sats_per_dollar=$2
     sats_per_dollar_db=$(./decibel.sh $sats_per_dollar)
     echo "{\"btc_price\": $btc_price, \"sats_per_dollar\": $sats_per_dollar, \"sats_per_dollar_db\": $sats_per_dollar_db}" | jq > /tmp/moscow_time.json
-    # /root/./set_vendor_elements.sh 212121 01
+    /root/./set_vendor_elements.sh 212121 01
 }
 
 # Add timeout to curl calls

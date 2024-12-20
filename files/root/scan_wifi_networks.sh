@@ -32,12 +32,6 @@ scan_wifi_networks_to_json() {
             return str
         }
 
-        # Function to calculate decibels (10 * log10(x))
-        function to_db(x) {
-            if (x <= 0) return "-inf"
-            return 10 * log(x) / log(10)
-        }
-
         BEGIN {
             print "["
             first = 1
@@ -46,16 +40,37 @@ scan_wifi_networks_to_json() {
             # If previous BSS has valid data, print it
             if (mac != "" && ssid != "") {
                 if (!first) print ","
-                printf "  {\"mac\": \"%s\", \"ssid\": \"%s\", \"encryption\": \"%s\", \"signal\": %s, \"signal_db\": %s", \
-                    mac, escape_json_string(ssid), encryption, signal, signal
-                if (vendor_elements != "") {
-                    cmd = "parse_vendor_elements \"" vendor_elements "\""
-                    cmd | getline ve_json
-                    close(cmd)
-                    if (ve_json != "") {
-                        printf ", \"vendor_elements\": %s", ve_json
-                    }
-                }
+                printf "  {\"mac\": \"%s\", \"ssid\": \"%s\", \"encryption\": \"%s\", \"signal\": %s", \
+                    mac, escape_json_string(ssid), encryption, signal
+
+                # Add vendor elements for TollGate SSIDs
+
+if (ssid ~ /^TollGate_/) {
+    cmd = "/root/get_vendor_elements.sh \"" ssid "\" 12 | jq -r \".kb_allocation_decimal, .contribution_decimal\""
+    if ((cmd | getline kb_allocation_decimal) > 0) {
+        if ((cmd | getline contribution_decimal) > 0) {
+            # Get decibel values using decibel.sh
+            cmd_db1 = "/root/decibel.sh " kb_allocation_decimal
+            cmd_db2 = "/root/decibel.sh " contribution_decimal
+            
+            cmd_db1 | getline kb_allocation_db
+            cmd_db2 | getline contribution_db
+            
+            # Calculate score by adding the decibel values
+            score = signal + kb_allocation_db + contribution_db
+            
+            printf ", \"kb_allocation_dB\": \"%s\", \"contribution_dB\": \"%s\", \"score\": \"%s\"", \
+                  kb_allocation_db, contribution_db, score
+                  
+            close(cmd_db1)
+            close(cmd_db2)
+        }
+    }
+    close(cmd)
+} else {
+    # For non-TollGate SSIDs, score is just the signal value
+    printf ", \"score\": \"%s\"", signal
+}
                 printf "}"
                 first = 0
             }
@@ -64,7 +79,6 @@ scan_wifi_networks_to_json() {
             ssid = ""
             encryption = "Open"
             signal = ""
-            vendor_elements = ""
         }
         $1 == "SSID:" {
             if (NF >= 2) {
@@ -79,24 +93,32 @@ scan_wifi_networks_to_json() {
             signal = $2
             sub(/ dBm$/, "", signal)
         }
-        /Vendor specific:/ {
-            if ($3 ~ /^dd/) {
-                vendor_elements = $3
-            }
-        }
         END {
-            # Print the last BSS if it has valid data
             if (mac != "" && ssid != "") {
                 if (!first) print ","
-                printf "  {\"mac\": \"%s\", \"ssid\": \"%s\", \"encryption\": \"%s\", \"signal\": %s, \"signal_db\": %s", \
-                    mac, escape_json_string(ssid), encryption, signal, signal
-                if (vendor_elements != "") {
-                    cmd = "parse_vendor_elements \"" vendor_elements "\""
-                    cmd | getline ve_json
-                    close(cmd)
-                    if (ve_json != "") {
-                        printf ", \"vendor_elements\": %s", ve_json
+                printf "  {\"mac\": \"%s\", \"ssid\": \"%s\", \"encryption\": \"%s\", \"signal\": %s", \
+                    mac, escape_json_string(ssid), encryption, signal
+
+                if (ssid ~ /^TollGate_/) {
+                    cmd = "/root/get_vendor_elements.sh \"" ssid "\" 12 | jq -r \".kb_allocation_decimal, .contribution_decimal\""
+                    if ((cmd | getline kb_allocation_decimal) > 0) {
+                        if ((cmd | getline contribution_decimal) > 0) {
+                            # Get decibel values using decibel.sh
+                            cmd_db1 = "/root/decibel.sh " kb_allocation_decimal
+                            cmd_db2 = "/root/decibel.sh " contribution_decimal
+                            
+                            cmd_db1 | getline kb_allocation_db
+                            cmd_db2 | getline contribution_db
+                            
+                            # First occurrence (in the BSS block):
+                            printf ", \"kb_allocation_dB\": \"%s\", \"contribution_dB\": \"%s\"", \
+                                  kb_allocation_db, contribution_db
+                                  
+                            close(cmd_db1)
+                            close(cmd_db2)
+                        }
                     }
+                    close(cmd)
                 }
                 printf "}"
             }
@@ -105,7 +127,7 @@ scan_wifi_networks_to_json() {
     ' | jq .
 }
 
-# Ensure jq is installed for proper JSON parsing
+# Rest of the script remains the same
 if ! command -v jq &>/dev/null; then
     echo "jq command not found, please install jq to use this script" >&2
     exit 1
