@@ -71,3 +71,6 @@ set your password and LNURL.
 - [Find error in logs](docs/find_error_in_logs.md): Commands for parsing through `build_logs.md` to find relevant lines.
 - [Synchronize nodogsplash.conf with UCI](docs/nodogsplash_configuration.md): nodogsplash gets its commands from `/etc/nodogsplash/nodogsplash.conf`, but the UCI commands modify `/etc/config/nodogsplash`. Logic is required to transfer the UCI settings to `nodogsplash.conf` on startup.
 - [Squashing a diverged branch](docs/squash_commits_since_main.md): squash all commits on the current branch since the point where it diverged from main. This makes the branch easier to rebase onto main.
+
+## License
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
